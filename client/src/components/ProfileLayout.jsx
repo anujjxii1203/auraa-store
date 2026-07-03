@@ -26,24 +26,26 @@ const ProfileLayout = () => {
     <div className="container" style={{ padding: '20px' }}>
       <PageTitle title="My Account" />
       <BackButton />
-      <div className="profile-wrapper" style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '20px', marginTop: '20px' }}>
+      <div className="profile-wrapper" style={{ marginTop: '20px' }}>
         
         {/* Sidebar */}
         <div className="profile-sidebar" style={{ background: 'var(--ss-light-grey)', padding: '20px', borderRadius: '12px', height: 'fit-content' }}>
-          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-            <div style={{ width: '80px', height: '80px', background: '#008080', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '900', margin: '0 auto 15px' }}>
+          <div className="profile-sidebar-header" style={{ textAlign: 'center', marginBottom: '30px' }}>
+            <div className="avatar" style={{ width: '80px', height: '80px', background: '#008080', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '900', margin: '0 auto 15px' }}>
               {(user?.username || 'A').charAt(0).toUpperCase()}
             </div>
-            <h2 style={{ fontSize: '20px', fontWeight: '950', color: 'var(--text-primary)' }}>{(user?.username || 'Customer').toUpperCase()}</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{user?.email || ''}</p>
+            <div>
+              <h2 style={{ fontSize: '20px', fontWeight: '950', color: 'var(--text-primary)' }}>{(user?.username || 'Customer').toUpperCase()}</h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{user?.email || ''}</p>
+            </div>
             
-            <div style={{ background: '#212121', color: '#fff', margin: '20px 0 10px', padding: '15px', borderRadius: '8px', border: '1px solid #333', textAlign: 'left' }}>
+            <div className="points-card" style={{ background: '#212121', color: '#fff', margin: '20px 0 10px', padding: '15px', borderRadius: '8px', border: '1px solid #333', textAlign: 'left' }}>
               <div style={{ fontSize: '11px', color: '#aaa', fontWeight: '800', letterSpacing: '1px', marginBottom: '5px' }}>AURA POINTS</div>
               <div style={{ fontSize: '24px', fontWeight: '900', color: '#ff4444' }}>{user?.points || 0}</div>
             </div>
           </div>
           
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <nav className="profile-sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
             <Link to="/profile" style={{ textDecoration: 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: path === '/profile' ? 'var(--bg-primary)' : 'transparent', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: path === '/profile' ? '#008080' : 'var(--text-primary)' }}>
                 <Package size={18} /> MY ORDERS
