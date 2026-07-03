@@ -11,17 +11,21 @@ async function sendOtpEmail(toEmail, otp) {
   console.log(`✅ OTP for ${toEmail}: ${otp}`);
   
   try {
-    const response = await fetch('https://api.resend.com/emails', {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
+        'accept': 'application/json',
+        'api-key': process.env.BREVO_API_KEY,
+        'content-type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'AURA STORE <onboarding@resend.dev>', // Note: Needs verified domain if not sending to your own email
-        to: toEmail,
+        sender: {
+          name: 'AURA STORE',
+          email: process.env.GMAIL_USER || 'auraastore2@gmail.com' // Ensure this email is a verified sender in Brevo
+        },
+        to: [{ email: toEmail }],
         subject: 'AURA STORE - OTP Verification',
-        html: `
+        htmlContent: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
             <h2 style="color: #e11b23; text-align: center;">AURA STORE</h2>
             <p>Hello,</p>
@@ -36,12 +40,12 @@ async function sendOtpEmail(toEmail, otp) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Resend API Error:', errorText);
+      console.error('Brevo API Error:', errorText);
     } else {
-      console.log(`✅ Email sent via Resend to ${toEmail}`);
+      console.log(`✅ Email sent via Brevo to ${toEmail}`);
     }
   } catch (err) {
-    console.error('Failed to send OTP via Resend:', err);
+    console.error('Failed to send OTP via Brevo:', err);
   }
 }
 
