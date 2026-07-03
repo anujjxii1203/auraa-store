@@ -248,6 +248,7 @@ const { all, get, initDatabase, run } = require('./database');
 console.log("Database module loaded.");
 
 const app = express();
+app.set('trust proxy', 1); // Required for rate limiting on Render
 const PORT = Number.parseInt(process.env.PORT, 10) || 5055;
 const JWT_SECRET = process.env.JWT_SECRET || 'development_secret_change_me';
 const TOKEN_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
