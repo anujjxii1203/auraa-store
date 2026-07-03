@@ -19,6 +19,15 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
 
+  useEffect(() => {
+    const handleLogout = () => {
+      setCart([]);
+      localStorage.removeItem('cart');
+    };
+    window.addEventListener('auth-logout', handleLogout);
+    return () => window.removeEventListener('auth-logout', handleLogout);
+  }, []);
+
   const addToCart = (product) => {
     setCart(prevCart => {
       const cartKey = getCartKey(product);
