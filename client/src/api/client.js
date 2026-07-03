@@ -40,8 +40,10 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    // Prevent infinite loops when refresh token itself fails, and don't intercept login errors
-    if (error.response?.status === 401 && !originalRequest.url.includes('/auth/login') && originalRequest.url !== '/auth/refresh' && !originalRequest._retry) {
+    // Prevent infinite loops when refresh token itself fails, and don't intercept login/otp errors
+    const nonRefreshEndpoints = ['/auth/login', '/auth/refresh', '/auth/verify-otp', '/auth/request-otp', '/auth/forgot-password', '/auth/reset-password'];
+    const isExcluded = nonRefreshEndpoints.some(ep => originalRequest.url.includes(ep));
+    if (error.response?.status === 401 && !isExcluded && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise(function(resolve, reject) {
           failedQueue.push({ resolve, reject });
