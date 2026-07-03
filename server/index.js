@@ -1555,7 +1555,7 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
 
     // Update user points
     const pointsEarned = Math.floor(amount * 0.1);
-    await run('UPDATE users SET points = points + ? WHERE id = ?', [pointsEarned, req.auth.id]);
+    await run('UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?', [pointsEarned, req.auth.id]);
 
     if (metadata && metadata.items && Array.isArray(metadata.items)) {
       for (const item of metadata.items) {
@@ -1611,7 +1611,7 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
 
     // Update user points
     const pointsEarned = Math.floor(amount * 0.1);
-    await run('UPDATE users SET points = points + ? WHERE id = ?', [pointsEarned, req.auth.id]);
+    await run('UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?', [pointsEarned, req.auth.id]);
 
     if (metadata && metadata.items && Array.isArray(metadata.items)) {
       for (const item of metadata.items) {
