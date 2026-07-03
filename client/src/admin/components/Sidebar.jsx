@@ -17,7 +17,6 @@ import { useAdminAuth } from '../context/AdminAuthContext';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const { logout, hasPermission, admin } = useAdminAuth();
-  const [isHovered, setIsHovered] = useState(false);
 
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard', permission: 'view_dashboard' },
@@ -35,19 +34,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     ? menuItems 
     : menuItems.filter(item => hasPermission(item.permission));
 
-  const expanded = isOpen || isHovered;
+  const expanded = isOpen;
 
   return (
     <aside 
       className={`admin-sidebar glass-panel ${expanded ? '' : 'closed'}`}
-      onMouseEnter={() => !isOpen && setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="sidebar-header">
         <h2 className="logo">{expanded ? 'AURA ADMIN' : 'A'}</h2>
-        <button className="toggle-btn" onClick={() => setIsOpen(!isOpen)}>
-          <ChevronLeft size={20} className={isOpen ? '' : 'rotated'} />
-        </button>
       </div>
 
       <nav className="sidebar-nav">

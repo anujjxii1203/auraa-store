@@ -47,6 +47,14 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
   return (
     <header className="admin-header glass-panel">
       <div className="header-left">
+        <button 
+          className="icon-btn" 
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          style={{ marginRight: '16px' }}
+          title="Toggle Sidebar"
+        >
+          <Menu size={20} />
+        </button>
         <div className="search-bar">
           <Search size={18} className="search-icon" />
           <input type="text" placeholder="Global Search (Ctrl+K)..." />
