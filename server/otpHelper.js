@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const nodemailer = require('nodemailer');
 const { run, get } = require('./database');
 
 function generateOtp() {
@@ -11,31 +12,35 @@ async function sendOtpEmail(toEmail, otp) {
   console.log(`✅ OTP for ${toEmail}: ${otp}`);
   
   try {
-    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        service_id: 'service_9o4s1gl',
-        template_id: 'template_m30sd3d',
-        user_id: 'AFvo6dICdofkL_HNn',
-        accessToken: 'tFnWoarudO_TSroaXv7vb',
-        template_params: {
-          email: toEmail,
-          passcode: otp
-        }
-      })
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS
+      }
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('EmailJS Error:', errorText);
-    } else {
-      console.log(`✅ Email sent via EmailJS to ${toEmail}`);
-    }
+    const mailOptions = {
+      from: `"AURA STORE" <${process.env.GMAIL_USER}>`,
+      to: toEmail,
+      subject: 'AURA STORE - OTP Verification',
+      text: `Your One-Time Password (OTP) for AURA STORE is: ${otp}\n\nThis OTP is valid for 5 minutes. Do not share this code with anyone.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+          <h2 style="color: #e11b23; text-align: center;">AURA STORE</h2>
+          <p>Hello,</p>
+          <p>Your One-Time Password (OTP) for AURA STORE is:</p>
+          <h1 style="text-align: center; font-size: 36px; letter-spacing: 5px; color: #333; background: #f5f5f5; padding: 15px; border-radius: 5px;">${otp}</h1>
+          <p>This OTP is valid for <strong>5 minutes</strong>.</p>
+          <p style="color: #666; font-size: 14px;">If you didn't request this code, you can safely ignore this email.</p>
+        </div>
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Email sent via Nodemailer to ${toEmail}: ${info.response}`);
   } catch (err) {
-    console.error('Failed to send OTP via EmailJS:', err);
+    console.error('Failed to send OTP via Nodemailer:', err);
   }
 }
 
