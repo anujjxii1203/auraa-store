@@ -42,7 +42,7 @@ const getSavedAddresses = (email) => {
 
 const Checkout = () => {
   const { cart, subtotal, discountAmount, cartTotal, clearCart, applyCoupon, appliedCoupon, removeCoupon } = useCart();
-  const { user } = useUser();
+  const { user, updateUser } = useUser();
   const { showToast } = useToast();
   const [couponInput, setCouponInput] = useState('');
   const [isApplying, setIsApplying] = useState(false);
@@ -137,6 +137,11 @@ const Checkout = () => {
         setIsOrdered(true);
         triggerConfetti();
 
+        try {
+          const meRes = await api.get('/api/me');
+          updateUser(meRes.data.user);
+        } catch(e) {}
+
         setTimeout(() => {
           clearCart();
           navigate('/profile');
@@ -183,6 +188,12 @@ const Checkout = () => {
           saveOrder(verifyResponse.data.payment);
           setIsOrdered(true);
           triggerConfetti();
+
+          try {
+            const meRes = await api.get('/api/me');
+            updateUser(meRes.data.user);
+          } catch(e) {}
+
           setTimeout(() => {
             clearCart();
             navigate('/profile');
@@ -229,6 +240,10 @@ const Checkout = () => {
             });
             saveOrder(verifyResponse.data.payment);
             setIsOrdered(true);
+            try {
+              const meRes = await api.get('/api/me');
+              updateUser(meRes.data.user);
+            } catch(e) {}
             triggerConfetti();
             setTimeout(() => {
               clearCart();
