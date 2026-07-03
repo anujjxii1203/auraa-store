@@ -1,0 +1,300 @@
+.admin-layout-root {
+  display: flex;
+  min-height: 100vh;
+  background: #0f1115;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.admin-sidebar {
+  width: 260px;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 100;
+  border: none !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 0 !important;
+}
+
+.admin-sidebar.closed {
+  width: 88px;
+}
+
+.sidebar-header {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.admin-sidebar.closed .sidebar-header {
+  padding: 0;
+  justify-content: center;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 800;
+  color: #e11b23;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.toggle-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  color: #8892b0;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.toggle-btn .rotated {
+  transform: rotate(180deg);
+}
+
+.admin-sidebar.closed .toggle-btn {
+  display: none;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.sidebar-nav::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.sidebar-nav {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.nav-item, .logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  color: #a8b2d1;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  cursor: pointer;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.nav-item svg, .logout-btn svg {
+  flex-shrink: 0;
+}
+
+.nav-label {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.nav-item:hover, .logout-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.nav-item.active {
+  background: rgba(225, 27, 35, 0.15);
+  color: #e11b23;
+  font-weight: 600;
+}
+
+.admin-sidebar.closed .nav-label {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-footer {
+  padding: 20px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Main Content Wrapper */
+.admin-main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 260px;
+  transition: margin-left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  height: 100vh;
+}
+
+.sidebar-closed .admin-main-wrapper {
+  margin-left: 88px;
+}
+
+/* Header */
+.admin-header {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  border: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 0 !important;
+  z-index: 10;
+  position: sticky;
+  top: 0;
+}
+
+.header-left, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 8px 16px;
+  border-radius: 8px;
+  width: 350px;
+}
+
+.search-bar input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  padding-left: 10px;
+  width: 100%;
+  outline: none;
+}
+
+.icon-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  color: #a8b2d1;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #e11b23;
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.admin-profile-menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.admin-profile-menu:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.avatar {
+  background: rgba(225, 27, 35, 0.2);
+  color: #e11b23;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-email {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.admin-role {
+  font-size: 12px;
+  color: #8892b0;
+}
+
+/* Main Content Area */
+.admin-main-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  background: #0f1115;
+}
+
+.admin-loading-screen {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f1115;
+}
+
+.admin-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(225, 27, 35, 0.3);
+  border-top-color: #e11b23;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
