@@ -19,6 +19,15 @@ export const WishlistProvider = ({ children }) => {
     localStorage.setItem('wishlist', JSON.stringify(wishlist));
   }, [wishlist]);
 
+  useEffect(() => {
+    const handleLogout = () => {
+      setWishlist([]);
+      localStorage.removeItem('wishlist');
+    };
+    window.addEventListener('auth-logout', handleLogout);
+    return () => window.removeEventListener('auth-logout', handleLogout);
+  }, []);
+
   const toggleWishlist = (product) => {
     setWishlist(prev => {
       const isExist = prev.find(item => item.id === product.id);
