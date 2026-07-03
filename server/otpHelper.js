@@ -1,5 +1,4 @@
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const { run, get } = require('./database');
 
@@ -8,37 +7,35 @@ function generateOtp() {
   return String(otp);
 }
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  }
-});
-
 async function sendOtpEmail(toEmail, otp) {
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
-    console.warn('Gmail credentials not configured – OTP email not sent');
-    console.log(`✅ OTP for ${toEmail}: ${otp}`);
-    return;
-  }
   console.log(`✅ OTP for ${toEmail}: ${otp}`);
+  
   try {
-    await transporter.sendMail({
-      from: `"Aura Store" <${process.env.GMAIL_USER}>`,
-      to: toEmail,
-      subject: 'Your security OTP for Aura Store',
-      html: `
-        <div style="font-family:sans-serif; padding:20px;">
-          <h2>AURA STORE – Security OTP</h2>
-          <p>Your one‑time password is:</p>
-          <p style="font-size:24px; font-weight:bold;">${otp}</p>
-          <p>This OTP will expire in 5 minutes. If you did not request this, please secure your account.</p>
-        </div>
-      `,
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        service_id: 'service_9o4s1gl',
+        template_id: 'template_m30sd3d',
+        user_id: 'AFvo6dICdofkL_HNn',
+        accessToken: 'tFnWoarudO_TSroaXv7vb',
+        template_params: {
+          email: toEmail,
+          passcode: otp
+        }
+      })
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('EmailJS Error:', errorText);
+    } else {
+      console.log(`✅ Email sent via EmailJS to ${toEmail}`);
+    }
   } catch (err) {
-    console.error('Failed to send OTP email:', err);
+    console.error('Failed to send OTP via EmailJS:', err);
   }
 }
 
