@@ -1,7 +1,11 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
+const dns = require('dns');
 const { run, get } = require('./database');
+
+// Fix for Render IPv6 ENETUNREACH error with Nodemailer
+dns.setDefaultResultOrder('ipv4first');
 
 function generateOtp() {
   const otp = crypto.randomInt(100000, 1000000);
