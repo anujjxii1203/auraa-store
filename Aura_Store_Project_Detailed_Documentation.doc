@@ -1,0 +1,87 @@
+<html>
+<head>
+<style>
+  body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 40px; }
+  h1 { color: #e11b23; border-bottom: 2px solid #e11b23; padding-bottom: 5px; }
+  h2 { color: #222; margin-top: 30px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+  h3 { color: #444; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 20px; font-size: 14px; }
+  th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+  th { background-color: #f8f8f8; font-weight: bold; }
+  .code { font-family: Consolas, monospace; background: #f4f4f4; padding: 2px 5px; border-radius: 3px; }
+  ul { margin-bottom: 20px; }
+  li { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Aura Store - Project Documentation</h1>
+<p><strong>Project Name:</strong> Aura Store (Clothing E-Commerce)</p>
+<p><strong>Stack:</strong> React.js (Vite), Node.js, Express.js, PostgreSQL / SQLite</p>
+<p><strong>Architecture:</strong> Monorepo (Web Client, Mobile App, Backend API)</p>
+
+<h2>1. Database Schema (Tables)</h2>
+<p>The backend dynamically supports PostgreSQL (for production) or local SQLite (for development). The following tables exist:</p>
+<table>
+  <tr><th>Table Name</th><th>Description / Columns</th></tr>
+  <tr><td><strong>users</strong></td><td>id, username, email, password, plain_password, role (default 'user'), points, created_at.<br/><em>Handles authentication and user profiles.</em></td></tr>
+  <tr><td><strong>products</strong></td><td>id, name, price, image, description, category, gender, stock, created_at.<br/><em>Stores inventory and product details.</em></td></tr>
+  <tr><td><strong>payments</strong></td><td>id, user_id, amount, method (card/upi/cod), status, reference, status_track, created_at.<br/><em>Stores orders, transaction references, and current shipping status.</em></td></tr>
+  <tr><td><strong>coupons</strong></td><td>id, code, discount_type, discount_value, active.<br/><em>Stores promotional discount codes.</em></td></tr>
+  <tr><td><strong>reviews</strong></td><td>id, product_id, username, rating, comment, image.<br/><em>User reviews for products.</em></td></tr>
+  <tr><td><strong>wishlist</strong></td><td>id, user_id, product_id.<br/><em>Saved favorite products for users.</em></td></tr>
+</table>
+
+<h2>2. Backend API Endpoints (server/index.js)</h2>
+<p>Base URL runs on port <code>5055</code>. All protected routes require a Bearer JWT Token.</p>
+<h3>Authentication Routes</h3>
+<ul>
+  <li><code>POST /api/register</code> - Creates a new user account, hashes password, and sends a Welcome email via Nodemailer.</li>
+  <li><code>POST /api/login</code> - Verifies credentials via Bcrypt and returns a JWT token.</li>
+  <li><code>POST /api/auth/request-otp</code> & <code>/api/auth/verify-otp</code> - Triggers OTP generation for secure login without passwords.</li>
+  <li><code>POST /api/auth/forgot-password</code> & <code>/api/auth/reset-password</code> - Initiates and completes password reset flow.</li>
+</ul>
+<h3>Product Routes</h3>
+<ul>
+  <li><code>GET /api/products</code> - Fetches all products. Supports query parameters for <code>gender</code> and <code>search</code> text.</li>
+  <li><code>GET /api/products/:id</code> - Fetches a single product and all its associated user reviews.</li>
+  <li><code>POST /api/reviews</code> - Adds a user review to a specific product.</li>
+</ul>
+<h3>Checkout & Payment Routes</h3>
+<ul>
+  <li><code>POST /api/payments/razorpay-order</code> - Integrates with Razorpay SDK to create an order ID for frontend payments.</li>
+  <li><code>POST /api/coupons/validate</code> - Validates entered discount coupon codes.</li>
+</ul>
+<h3>Admin Routes</h3>
+<ul>
+  <li><code>GET /api/admin/stats</code> - Fetches complete data (Users, Products, Orders, Coupons) to populate the admin dashboard.</li>
+  <li><code>POST /api/admin/products</code> - Creates new inventory items (requires Admin rights).</li>
+  <li><code>PATCH /api/admin/orders/:id</code> - Updates order tracking status (e.g., 'shipped', 'delivered').</li>
+</ul>
+
+<h2>3. Frontend Client (React)</h2>
+<p>Built with React 19, Vite, and React Router DOM. Styling leverages CSS and <code>framer-motion</code> for smooth animations.</p>
+<h3>Key Pages (client/src/pages)</h3>
+<ul>
+  <li><strong>Home.jsx, Men.jsx, Footwear.jsx:</strong> Catalog pages that display fetched products based on category filters.</li>
+  <li><strong>ProductDetails.jsx:</strong> Detailed view of a single product with an Add to Cart button and review section.</li>
+  <li><strong>Cart.jsx:</strong> Manages active cart items, calculates subtotals, and processes coupon discounts using <code>CartContext</code>.</li>
+  <li><strong>Checkout.jsx:</strong> Handles address selection and payment processing (Razorpay & COD). Triggers <code>canvas-confetti</code> on success.</li>
+  <li><strong>Profile.jsx & TrackOrder.jsx:</strong> User account management, viewing past orders, and tracking current order status.</li>
+  <li><strong>Login.jsx:</strong> Centralized authentication UI handling sign-in, registration, and OTP verification flows.</li>
+  <li><strong>AdminStats.jsx:</strong> The admin dashboard to view metrics and manage the entire store's data.</li>
+</ul>
+
+<h2>4. Mobile App (React Native / Expo)</h2>
+<p>The <code>/app</code> directory contains the React Native codebase initialized with Expo. This allows the store to be compiled and shipped to both Android and iOS devices using the same backend API as the web client.</p>
+
+<h2>5. Security & Integrations</h2>
+<ul>
+  <li><strong>Passwords:</strong> Secured using <code>bcryptjs</code> with 12 rounds of cryptographic hashing.</li>
+  <li><strong>Authentication:</strong> Stateless, secure sessions using JSON Web Tokens (JWT) with a 7-day expiration.</li>
+  <li><strong>Email Service:</strong> Integrated <code>nodemailer</code> using Gmail SMTP to send order confirmations, welcome emails, and OTPs.</li>
+  <li><strong>Payments:</strong> Official <code>Razorpay</code> SDK ensures PCI-compliant transaction processing directly from the checkout page.</li>
+</ul>
+
+</body>
+</html>
