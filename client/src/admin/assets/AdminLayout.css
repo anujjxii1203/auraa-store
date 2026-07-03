@@ -301,6 +301,12 @@
   border-top-color: #e11b23;
   border-radius: 50%;
   animation: spin 1s linear infinite;
+  margin: 100px auto;
+  display: block;
+}
+
+.admin-loading-screen .admin-spinner {
+  margin: 0;
 }
 
 @keyframes spin {
