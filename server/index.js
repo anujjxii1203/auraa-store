@@ -31,14 +31,37 @@ const razorpayInstance = process.env.RAZORPAY_KEY_ID && !process.env.RAZORPAY_KE
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 }) : null;
-const nodemailer = require('nodemailer');
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
+// Use Brevo API for all emails instead of Nodemailer (blocked by Render)
+const transporter = {
+  sendMail: async ({ to, subject, html }) => {
+    if (!process.env.BREVO_API_KEY) {
+      console.warn('BREVO_API_KEY is missing. Email not sent.');
+      return;
+    }
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': process.env.BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: {
+          name: 'AURA STORE',
+          email: process.env.GMAIL_USER || 'auraastore2@gmail.com'
+        },
+        to: [{ email: to }],
+        subject: subject,
+        htmlContent: html
+      })
+    });
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Brevo API Error: ${err}`);
+    }
+    return response;
   }
-});
+};
 
 const sendWelcomeEmail = async (toEmail, username) => {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) return;
