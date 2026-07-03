@@ -1246,13 +1246,28 @@ app.get('/api/admin/analytics', authenticateAdmin, requirePermission('view_dashb
 app.get('/api/admin/audit-logs', authenticateAdmin, requirePermission('view_dashboard'), asyncHandler(async (req, res) => {
   const limit = Number(req.query.limit) || 20;
   const logs = await all(`
-    SELECT a.*, u.email as admin_email 
-    FROM audit_logs a 
-    LEFT JOIN admin_users u ON CAST(json_extract(a.details, '$.admin_id') AS INTEGER) = u.id
-    ORDER BY a.created_at DESC 
+    SELECT * 
+    FROM audit_logs 
+    ORDER BY created_at DESC 
     LIMIT ?
   `, [limit]);
-  res.json(logs);
+  
+  const admins = await all('SELECT id, email FROM admin_users');
+  const adminMap = {};
+  admins.forEach(a => adminMap[a.id] = a.email);
+
+  const enrichedLogs = logs.map(log => {
+    let admin_email = 'Unknown';
+    try {
+      const details = JSON.parse(log.details || '{}');
+      if (details.admin_id && adminMap[details.admin_id]) {
+        admin_email = adminMap[details.admin_id];
+      }
+    } catch(e) {}
+    return { ...log, admin_email };
+  });
+
+  res.json(enrichedLogs);
 }));
 
 // --- ORDER TRACKING ROUTES ---
