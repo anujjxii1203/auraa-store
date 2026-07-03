@@ -517,7 +517,7 @@ async function createAdminUsersTable() {
   `);
 
   const existingAdmin = await get('SELECT COUNT(*) as cnt FROM admin_users');
-  if (!existingAdmin || existingAdmin.cnt === 0) {
+  if (!existingAdmin || parseInt(existingAdmin.cnt, 10) === 0) {
     const bcrypt = require('bcryptjs');
     const hash = await bcrypt.hash('admin123', 10);
     // Role ID 1 is assumed to be Super Admin
@@ -586,8 +586,8 @@ async function createRolesTable() {
     }
   }
 
-  const existingRole = await get('SELECT COUNT(*) as cnt FROM roles');
-  if (!existingRole || existingRole.cnt === 0) {
+  const existingRoles = await get('SELECT COUNT(*) as cnt FROM roles');
+  if (!existingRoles || parseInt(existingRoles.cnt, 10) === 0) {
     if (dbType === 'postgres') {
       await run('INSERT INTO roles (name, permissions) VALUES ($1, $2)', ['Super Admin', '["all"]']);
     } else {
