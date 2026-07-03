@@ -21,6 +21,13 @@
   border: none !important;
   border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
   border-radius: 0 !important;
+  background: #111318;
+}
+
+.glass-panel {
+  background: rgba(17, 19, 24, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .admin-sidebar.closed {
@@ -170,6 +177,7 @@
   z-index: 10;
   position: sticky;
   top: 0;
+  background: #111318;
 }
 
 .header-left, .header-right {
