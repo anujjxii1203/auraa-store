@@ -11,7 +11,6 @@ import {
   CreditCard,
   Home,
   LoaderCircle,
-  Mail,
   MapPin,
   Plus,
   ShieldCheck,
@@ -57,7 +56,7 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [paymentError, setPaymentError] = useState('');
   const [isPaying, setIsPaying] = useState(false);
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(3);
   const navigate = useNavigate();
   const finalTotal = Math.round(cartTotal * 1.05);
 
@@ -137,10 +136,11 @@ const Checkout = () => {
         saveOrder(response.data.payment);
         setIsOrdered(true);
         triggerConfetti();
+
         setTimeout(() => {
           clearCart();
           navigate('/profile');
-        }, 5000);
+        }, 3000);
       } catch (err) {
         setPaymentError(err.userMessage || 'Payment could not be processed.');
       } finally {
@@ -186,7 +186,7 @@ const Checkout = () => {
           setTimeout(() => {
             clearCart();
             navigate('/profile');
-          }, 5000);
+          }, 3000);
         } catch (err) {
           setPaymentError(err?.response?.data?.message || err.userMessage || 'Payment verification failed.');
           setIsPaying(false);
@@ -233,7 +233,7 @@ const Checkout = () => {
             setTimeout(() => {
               clearCart();
               navigate('/profile');
-            }, 5000);
+            }, 3000);
           } catch (err) {
             setPaymentError(err?.response?.data?.message || err.userMessage || 'Payment verification failed.');
             setIsPaying(false);
@@ -283,13 +283,7 @@ const Checkout = () => {
           <CheckCircle size={80} style={{ color: '#008080', margin: '0 auto 20px' }} />
           <h2 style={{ fontSize: '28px', fontWeight: '950', marginBottom: '10px' }}>Order Placed Successfully!</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '16px' }}>Payment confirmed. Thank you for shopping with AURA STORE.</p>
-          <div style={{ background: '#e0f2f1', border: '1px solid #008080', borderRadius: '8px', padding: '15px', marginTop: '20px', display: 'inline-block' }}>
-            <p style={{ color: '#008080', fontSize: '15px', fontWeight: '800', margin: 0 }}>
-              <Mail size={18} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
-              Please check your email (and spam folder) for the invoice and progress updates.
-            </p>
-          </div>
-          <p style={{ color: '#999', fontSize: '13px', marginTop: '25px', fontWeight: '800' }}>REDIRECTING TO YOUR ORDERS IN {countdown} SECONDS...</p>
+          <p style={{ color: '#999', fontSize: '13px', marginTop: '15px', fontWeight: '800' }}>REDIRECTING TO YOUR ORDERS IN {countdown} SECONDS...</p>
 
           {/* Progress Bar */}
           <div style={{ width: '200px', height: '4px', background: '#eee', borderRadius: '10px', margin: '20px auto 0', overflow: 'hidden', position: 'relative' }}>
@@ -298,7 +292,7 @@ const Checkout = () => {
               top: 0,
               left: 0,
               height: '100%',
-              width: `${(countdown / 5) * 100}%`,
+              width: `${(countdown / 3) * 100}%`,
               background: '#008080',
               transition: 'width 1s linear',
               borderRadius: '10px'
