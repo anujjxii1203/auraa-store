@@ -1243,7 +1243,7 @@ app.get('/api/admin/analytics', authenticateAdmin, requirePermission('view_dashb
   }
 
   payments.forEach(p => {
-    const pDate = new Date(p.created_at + (p.created_at.includes('Z') ? '' : 'Z')); // Ensure UTC parsing
+    const pDate = p.created_at instanceof Date ? p.created_at : new Date(p.created_at + (p.created_at.includes('Z') ? '' : 'Z'));
     if (pDate >= sevenDaysAgo) {
       const dayName = dayNames[pDate.getDay()];
       if (daysMap[dayName] !== undefined) {
@@ -1258,10 +1258,10 @@ app.get('/api/admin/analytics', authenticateAdmin, requirePermission('view_dashb
   }));
 
   res.json({
-    totalRevenue: totalRevenueRow?.total || 0,
-    totalOrders: totalOrdersRow?.count || 0,
-    totalCustomers: totalCustomersRow?.count || 0,
-    activeCarts: activeCartsRow?.count || 0,
+    totalRevenue: Number(totalRevenueRow?.total) || 0,
+    totalOrders: Number(totalOrdersRow?.count) || 0,
+    totalCustomers: Number(totalCustomersRow?.count) || 0,
+    activeCarts: Number(activeCartsRow?.count) || 0,
     salesGraph
   });
 }));
