@@ -1056,7 +1056,7 @@ app.post('/api/auth/forgot-password', forgotPasswordLimiter, asyncHandler(async 
   await storeOtp(email, otp);
   sendOtpEmail(email, otp).catch(err => console.error('Background email failed:', err));
   
-  res.json({ message: `Password reset OTP sent to your email. (Testing OTP: ${otp})` });
+  res.json({ message: `Password reset OTP sent to your email.` });
 }));
 
 // Forgot Password - Reset with OTP
