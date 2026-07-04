@@ -312,3 +312,48 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* =========================================
+   MOBILE RESPONSIVENESS (max-width: 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  .admin-sidebar {
+    width: 260px !important;
+    transform: translateX(-100%);
+    z-index: 1000;
+  }
+  
+  .sidebar-open .admin-sidebar {
+    transform: translateX(0);
+  }
+  
+  .sidebar-closed .admin-sidebar {
+    transform: translateX(-100%);
+  }
+
+  .admin-main-wrapper {
+    margin-left: 0 !important;
+  }
+  
+  .sidebar-closed .admin-main-wrapper {
+    margin-left: 0 !important;
+  }
+
+  .admin-header {
+    padding: 0 15px;
+  }
+
+  /* Hide search bar on mobile */
+  .search-bar {
+    display: none;
+  }
+
+  .admin-main-content {
+    padding: 15px;
+  }
+
+  /* Adjust header right profile menu */
+  .admin-info {
+    display: none; /* Hide admin email on small screens */
+  }
+}
