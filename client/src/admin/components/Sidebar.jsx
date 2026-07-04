@@ -51,6 +51,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             key={item.name}
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             title={!expanded ? item.name : ''}
+            onClick={() => {
+              if (window.innerWidth <= 768) {
+                setIsOpen(false);
+              }
+            }}
           >
             <item.icon size={22} />
             <span className="nav-label">{item.name}</span>
