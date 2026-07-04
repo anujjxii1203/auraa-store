@@ -69,7 +69,9 @@
 }
 
 .admin-table-container {
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table-toolbar {
@@ -214,4 +216,28 @@
 }
 .empty-state svg {
   opacity: 0.5;
+}
+
+/* Settings Layout */
+.admin-settings-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.admin-settings-sidebar {
+  width: 250px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .admin-settings-layout {
+    flex-direction: column;
+  }
+  .admin-settings-sidebar {
+    width: 100%;
+  }
 }

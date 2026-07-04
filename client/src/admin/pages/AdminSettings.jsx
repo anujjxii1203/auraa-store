@@ -86,9 +86,9 @@ const AdminSettings = () => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+      <div className="admin-settings-layout">
         {/* Settings Sidebar Tabs */}
-        <div className="glass-panel" style={{ width: '250px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="glass-panel admin-settings-sidebar">
           <button 
             type="button"
             onClick={() => setActiveTab('general')}
