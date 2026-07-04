@@ -104,7 +104,7 @@ const AdminDashboard = () => {
                 <div className="timeline-dot"></div>
                 <div className="timeline-content">
                   <span className="action">{log.action}</span>
-                  <span className="details">{log.admin_email || 'System'} - {new Date(log.created_at + 'Z').toLocaleString()}</span>
+                  <span className="details">{log.admin_email || 'System'} - {new Date(log.created_at + (log.created_at.includes('Z') ? '' : 'Z')).toLocaleString()}</span>
                 </div>
               </div>
             ))}
