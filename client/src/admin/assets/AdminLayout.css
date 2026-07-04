@@ -354,6 +354,21 @@
 
   /* Adjust header right profile menu */
   .admin-info {
-    display: none; /* Hide admin email on small screens */
+    display: none;
+  }
+
+  /* Mobile Overlay */
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 900;
+  }
+
+  .admin-sidebar {
+    background: #111318 !important; /* Solid background on mobile */
   }
 }

@@ -88,7 +88,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                     <div>
                       <p style={{ margin: 0, fontSize: '13px', color: '#d1d5db', fontWeight: 500 }}>{log.action}</p>
                       <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#8892b0' }}>
-                        {log.admin_email} - {new Date(log.created_at + 'Z').toLocaleString()}
+                        {log.admin_email} - {new Date(log.created_at + (log.created_at.includes('Z') ? '' : 'Z')).toLocaleString()}
                       </p>
                     </div>
                   </div>
