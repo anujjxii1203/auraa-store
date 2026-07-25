@@ -46,7 +46,7 @@ const Home = () => {
       {/* Cinematic Hero Section */}
       <section className="home-hero" style={{
         position: 'relative',
-        height: '85vh',
+        height: 'calc(100vh - 70px)',
         width: '100%',
         backgroundImage: 'url("https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&w=2000&q=80")',
         backgroundSize: 'cover',
