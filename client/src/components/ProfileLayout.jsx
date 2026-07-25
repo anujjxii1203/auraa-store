@@ -52,29 +52,30 @@ const ProfileLayout = () => {
               </div>
 
               {/* Far-Right Aura Points Icon Pill */}
-              <div 
+              <div
                 title="Aura Points Balance"
-                style={{ 
-                  display: 'inline-flex', 
-                  alignItems: 'center', 
-                  gap: '6px', 
-                  background: '#212121', 
-                  color: '#fff', 
-                  padding: '6px 14px', 
-                  borderRadius: '20px', 
-                  fontSize: '12px', 
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#212121',
+                  color: '#fff',
+                  padding: '6px 14px',
+                  borderRadius: '20px',
+                  fontSize: '11px',
                   fontWeight: '900',
                   marginLeft: 'auto',
                   flexShrink: 0
                 }}
               >
                 <Sparkles size={14} color="#ffd700" fill="#ffd700" />
-                <span style={{ color: '#ff4444', fontWeight: '950' }}>{user?.points || 0}</span>
+                <span style={{ color: '#aaa', letterSpacing: '0.5px', fontSize: '10px' }}>AURA POINTS:</span>
+                <span style={{ color: '#ff4444', fontWeight: '950', fontSize: '13px' }}>{user?.points || 0}</span>
               </div>
             </div>
 
             {/* Mobile Hamburger Toggle Bar */}
-            <button 
+            <button
               className="profile-mobile-toggle"
               onClick={() => setIsNavOpen(!isNavOpen)}
               style={{
