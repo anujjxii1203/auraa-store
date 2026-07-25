@@ -28,7 +28,7 @@ const ProfileLayout = () => {
       <BackButton />
       <div className="profile-wrapper" style={{ marginTop: '20px' }}>
         {/* Sidebar */}
-        <div className="profile-sidebar" style={{ background: 'var(--ss-light-grey)', padding: '20px', borderRadius: '12px', height: 'fit-content' }}>
+        <div className="profile-sidebar" style={{ background: 'var(--ss-light-grey)', padding: '20px', borderRadius: '12px', height: 'fit-content', position: 'sticky', top: '20px' }}>
           <div className="profile-sidebar-header" style={{ textAlign: 'center', marginBottom: '30px' }}>
             <div className="avatar" style={{ width: '80px', height: '80px', background: '#008080', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '900', margin: '0 auto 15px' }}>
               {(user?.username || 'A').charAt(0).toUpperCase()}

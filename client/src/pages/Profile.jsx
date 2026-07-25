@@ -37,6 +37,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [activeTab, setActiveTab] = useState('orders');
+  const [visibleCount, setVisibleCount] = useState(4);
 
   useEffect(() => {
     if (!user) {
@@ -112,12 +113,12 @@ const Profile = () => {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {orders.map((order) => (
+                  {orders.slice(0, visibleCount).map((order) => (
                     <div key={order.id} style={{ border: '1.5px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-primary)' }}>
                       <div 
                         className="order-header" 
                         onClick={() => navigate(`/order/${order.reference || order.id}`)}
-                        style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', transition: '0.2s', '&:hover': { background: 'var(--ss-light-grey)' } }}
+                        style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', transition: '0.2s' }}
                       >
                         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                           <div style={{ display: 'flex' }}>
@@ -144,10 +145,10 @@ const Profile = () => {
                       </div>
 
                       <div style={{ borderTop: '1px solid var(--border-color)', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--ss-light-grey)' }}>
-                        <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)' }}>RATE & REVIEW</span>
+                        <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)' }}>RATE &amp; REVIEW</span>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <svg key={star} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer', color: 'var(--text-secondary)' }} onClick={() => navigate(`/order/${order.reference || order.id}`)}>
+                            <svg key={star} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer', color: 'var(--text-secondary)' }} onClick={() => navigate(`/order/${order.reference || order.id}`)}>  
                               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                             </svg>
                           ))}
@@ -155,6 +156,15 @@ const Profile = () => {
                       </div>
                     </div>
                   ))}
+
+                  {orders.length > visibleCount && (
+                    <button
+                      onClick={() => setVisibleCount(v => v + 4)}
+                      style={{ width: '100%', padding: '12px', background: 'transparent', border: '1.5px solid var(--border-color)', borderRadius: '10px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', color: 'var(--text-primary)', marginTop: '5px' }}
+                    >
+                      SHOW MORE ORDERS ({orders.length - visibleCount} remaining)
+                    </button>
+                  )}
                 </div>
               )}
             </>
