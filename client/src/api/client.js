@@ -63,7 +63,10 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await api.post('/auth/refresh');
+        const res = await api.post('/auth/refresh');
+        if (res.data && res.data.token) {
+          localStorage.setItem('token', res.data.token);
+        }
         processQueue(null);
         return api(originalRequest);
       } catch (err) {
