@@ -687,6 +687,10 @@ app.post('/api/auth/google', loginLimiter, asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Email not provided by Google.' });
   }
 
+  if (!payload.email_verified) {
+    return res.status(400).json({ message: 'Google account email is not verified.' });
+  }
+
   let user = await get('SELECT id, username, email, password FROM users WHERE email = ?', [email]);
 
   if (!user) {
@@ -916,7 +920,7 @@ app.post('/api/auth/request-otp', otpLimiter, asyncHandler(async (req, res, next
 }));
 
 // Verify OTP and issue JWT
-app.post('/api/auth/verify-otp', asyncHandler(async (req, res, next) => {
+app.post('/api/auth/verify-otp', otpLimiter, asyncHandler(async (req, res, next) => {
   const { email: rawEmail, otp } = req.body;
   const email = normalizeEmail(rawEmail);
 
@@ -1301,6 +1305,25 @@ app.post('/api/admin/settings', authenticateAdmin, requirePermission('manage_set
   res.json({ message: 'Settings updated successfully' });
 }));
 
+// Customer Order Cancellation
+app.post('/api/orders/:id/cancel', authenticateUser, asyncHandler(async (req, res) => {
+  const orderId = req.params.id;
+  const userId = req.auth.id;
+
+  const order = await get('SELECT * FROM payments WHERE (id = ? OR reference = ?) AND user_id = ?', [orderId, orderId, userId]);
+  if (!order) {
+    return res.status(404).json({ message: 'Order not found or access denied.' });
+  }
+
+  const currentStatus = (order.status_track || 'processing').toLowerCase();
+  if (currentStatus !== 'processing') {
+    return res.status(400).json({ message: 'Only processing orders can be cancelled.' });
+  }
+
+  await run('UPDATE payments SET status_track = ? WHERE id = ?', ['cancelled', order.id]);
+  res.json({ message: 'Order cancelled successfully.' });
+}));
+
 // --- ADMIN REVIEW ROUTES ---
 app.get('/api/admin/reviews', authenticateAdmin, requirePermission('manage_products'), asyncHandler(async (req, res) => {
   const reviews = await all(`
@@ -1391,13 +1414,13 @@ app.post('/api/admin/admin-users', authenticateAdmin, requirePermission('all_per
     return res.status(400).json({ message: 'Admin user already exists with this email' });
   }
 
-  const hash = await bcrypt.hash(password, 10);
-  const id = uuidv4();
+  const hash = await bcrypt.hash(password, 12);
+  const id = randomUUID();
   await run('INSERT INTO admin_users (id, email, password_hash, role_id, status) VALUES (?, ?, ?, ?, ?)', [id, email, hash, role_id, 'active']);
 
   // Log action
-  await run('INSERT INTO audit_logs (id, admin_id, admin_email, action, entity, entity_id) VALUES (?, ?, ?, ?, ?, ?)',
-    [uuidv4(), req.admin.id, req.admin.email, 'CREATED_ADMIN', 'admin_users', id]
+  await run('INSERT INTO audit_logs (action, details, ip) VALUES (?, ?, ?)',
+    [ 'CREATED_ADMIN', JSON.stringify({ created_admin_id: id, created_email: email, by_admin: req.admin.id }), req.ip || 'unknown' ]
   );
 
   res.status(201).json({ message: 'Admin user created successfully' });
@@ -1464,36 +1487,49 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
   if (method === 'card' || method === 'upi') {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount, metadata } = req.body;
 
-    if (process.env.RAZORPAY_KEY_SECRET && !process.env.RAZORPAY_KEY_SECRET.includes('YOUR_KEY_SECRET')) {
-      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-        res.status(400).json({ message: 'Payment verification failed. Missing signature parameters.' });
-        return;
-      }
-      const generatedSignature = createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-        .update(razorpay_order_id + "|" + razorpay_payment_id)
-        .digest('hex');
-
-      if (generatedSignature !== razorpay_signature) {
-        res.status(400).json({ message: 'Payment verification failed. Invalid signature.' });
-        return;
-      }
+    // Online payments must go through Razorpay verification. If the secret is not
+    // configured we refuse rather than silently accepting unverified payments.
+    if (!process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET.includes('YOUR_KEY_SECRET')) {
+      res.status(503).json({ message: 'Online payments are not available right now. Please use Cash on Delivery.' });
+      return;
     }
 
-    // Server-side amount validation: recompute from DB prices to prevent tampering
-    if (metadata && Array.isArray(metadata.items) && metadata.items.length > 0) {
-      let serverAmount = 0;
-      for (const item of metadata.items) {
-        const product = await get('SELECT price FROM products WHERE id = ? AND deleted_at IS NULL', [item.id]);
-        if (!product) {
-          res.status(400).json({ message: 'Invalid product in order.' });
-          return;
-        }
-        serverAmount += Number(product.price) * Number(item.quantity || 0);
-      }
-      if (Math.abs(serverAmount - Number(amount)) > 1) {
-        res.status(400).json({ message: 'Order amount mismatch. Please refresh your cart and try again.' });
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      res.status(400).json({ message: 'Payment verification failed. Missing signature parameters.' });
+      return;
+    }
+    const generatedSignature = createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .digest('hex');
+
+    if (generatedSignature !== razorpay_signature) {
+      res.status(400).json({ message: 'Payment verification failed. Invalid signature.' });
+      return;
+    }
+
+    // Server-side amount validation: recompute from DB prices to prevent tampering.
+    // Orders MUST contain items so the amount is always derived from DB prices.
+    if (!metadata || !Array.isArray(metadata.items) || metadata.items.length === 0) {
+      res.status(400).json({ message: 'Order must contain at least one item.' });
+      return;
+    }
+    let serverAmount = 0;
+    for (const item of metadata.items) {
+      const qty = Number(item.quantity || 0);
+      if (!Number.isInteger(qty) || qty <= 0) {
+        res.status(400).json({ message: 'Invalid item quantity in order.' });
         return;
       }
+      const product = await get('SELECT price FROM products WHERE id = ? AND deleted_at IS NULL', [item.id]);
+      if (!product) {
+        res.status(400).json({ message: 'Invalid product in order.' });
+        return;
+      }
+      serverAmount += Number(product.price) * qty;
+    }
+    if (Math.abs(serverAmount - Number(amount)) > 1) {
+      res.status(400).json({ message: 'Order amount mismatch. Please refresh your cart and try again.' });
+      return;
     }
 
     const paymentId = razorpay_payment_id || `pay_${randomUUID().replace(/-/g, '').slice(0, 18)}`;

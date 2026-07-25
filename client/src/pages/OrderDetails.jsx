@@ -238,11 +238,55 @@ const OrderDetails = () => {
             </h1>
             <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>Placed on {order.date}</p>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ margin: '0 0 5px 0', color: '#666', fontSize: '14px' }}>Total Amount</p>
+          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+            <p style={{ margin: '0 0 2px 0', color: '#666', fontSize: '14px' }}>Total Amount</p>
             <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: 'var(--ss-red)' }}>
               {formatPrice(order.total)}
             </h2>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '5px' }}>
+              <button
+                onClick={generateInvoice}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  background: '#008080',
+                  color: '#fff',
+                  border: 'none',
+                  fontWeight: '800',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                DOWNLOAD INVOICE (PDF)
+              </button>
+              {order.status === 'processing' && (
+                <button
+                  onClick={async () => {
+                    if (window.confirm('Are you sure you want to cancel this order?')) {
+                      try {
+                        await api.post(`/orders/${order.reference || order.id}/cancel`);
+                        showToast('Order cancelled successfully', 'success');
+                        setOrder({ ...order, status: 'cancelled' });
+                      } catch (err) {
+                        showToast(err.response?.data?.message || 'Failed to cancel order', 'error');
+                      }
+                    }
+                  }}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '6px',
+                    background: 'transparent',
+                    border: '1px solid #e11b23',
+                    color: '#e11b23',
+                    fontWeight: '800',
+                    fontSize: '12px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  CANCEL ORDER
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

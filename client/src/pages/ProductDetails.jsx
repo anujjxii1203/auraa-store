@@ -45,6 +45,12 @@ const ProductDetails = () => {
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
+
+  const handleBuyNow = () => {
+    addToCart({ ...product, selectedSize, quantity });
+    navigate('/checkout');
+  };
 
   const fetchProduct = async () => {
     try {
@@ -186,7 +192,10 @@ const ProductDetails = () => {
           <div style={{ marginBottom: '30px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '14px', fontWeight: '800' }}>Please select a size.</span>
-              <button style={{ background: 'transparent', border: 'none', color: '#008080', fontWeight: '800', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <button 
+                onClick={() => setShowSizeGuide(true)}
+                style={{ background: 'transparent', border: 'none', color: '#008080', fontWeight: '800', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
                 <Ruler size={14} /> Size Guide
               </button>
             </div>
@@ -203,22 +212,26 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="pdp-action-row">
-            <button className="btn-ss-primary" onClick={handleAddToCart}>
+          {/* Action Row */}
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '25px', flexWrap: 'wrap' }}>
+            <button className="btn-ss-primary" onClick={handleAddToCart} style={{ flex: 1, padding: '16px', fontSize: '14px', fontWeight: '900' }}>
               {isAdded ? 'ADDED TO BAG' : 'ADD TO BAG'}
+            </button>
+            <button 
+              onClick={handleBuyNow}
+              style={{ flex: 1, padding: '16px', fontSize: '14px', fontWeight: '900', background: '#212121', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', transition: '0.2s' }}
+            >
+              BUY NOW
             </button>
             <button 
               className="btn-ss-secondary" 
               onClick={() => toggleWishlist(product)}
-              style={{ borderColor: isWishlisted ? '#e11b23' : '#eee', color: isWishlisted ? '#e11b23' : '#111' }}
+              style={{ width: 'auto', padding: '0 20px', borderColor: isWishlisted ? '#e11b23' : '#eee', color: isWishlisted ? '#e11b23' : '#111' }}
             >
               <Heart size={18} fill={isWishlisted ? '#e11b23' : 'none'} />
-              {isWishlisted ? 'WISHLISTED' : 'ADD TO WISHLIST'}
             </button>
           </div>
 
-          {/* Accordions */}
           <div style={{ marginTop: '10px' }}>
             <AccordionItem title="Product Details" defaultOpen={true}>
               <p style={{ marginBottom: '15px' }}>{product.description}</p>
@@ -239,6 +252,27 @@ const ProductDetails = () => {
             </AccordionItem>
 
             <AccordionItem title={`Customer Reviews (${product.reviews?.length || 0})`}>
+              {/* Rating Breakdown Bar Chart */}
+              {product.reviews && product.reviews.length > 0 && (
+                <div style={{ marginBottom: '25px', padding: '20px', background: 'var(--ss-light-grey)', borderRadius: '8px' }}>
+                  <div style={{ fontSize: '18px', fontWeight: '900', marginBottom: '15px' }}>
+                    Rating Overview ({(product.reviews.reduce((acc, r) => acc + (r.rating || 5), 0) / product.reviews.length).toFixed(1)} ★)
+                  </div>
+                  {[5, 4, 3, 2, 1].map(star => {
+                    const count = product.reviews.filter(r => Math.round(r.rating) === star).length;
+                    const percent = Math.round((count / product.reviews.length) * 100);
+                    return (
+                      <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', fontSize: '12px' }}>
+                        <span style={{ width: '30px', fontWeight: '800' }}>{star} ★</span>
+                        <div style={{ flex: 1, height: '8px', background: '#e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{ width: `${percent}%`, height: '100%', background: '#008080' }} />
+                        </div>
+                        <span style={{ width: '40px', color: '#666', fontSize: '11px' }}>{percent}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               <div style={{ marginBottom: '30px' }}>
                 <h4 style={{ fontSize: '15px', fontWeight: '800', marginBottom: '15px' }}>Write a Review</h4>
                 {hasPurchased ? (
@@ -301,6 +335,56 @@ const ProductDetails = () => {
             ))}
           </div>
         </section>
+      )}
+
+      {/* SIZE GUIDE MODAL */}
+      {showSizeGuide && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '30px', maxWidth: '550px', width: '100%', position: 'relative' }}>
+            <button 
+              onClick={() => setShowSizeGuide(false)}
+              style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', cursor: 'pointer', color: '#111' }}
+            >
+              <X size={20} />
+            </button>
+            <h2 style={{ fontSize: '22px', fontWeight: '950', marginBottom: '8px' }}>SIZE GUIDE</h2>
+            <p style={{ fontSize: '13px', color: '#666', marginBottom: '20px' }}>All measurements are in inches. Fits true to size.</p>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ background: '#212121', color: '#fff' }}>
+                  <th style={{ padding: '10px' }}>Size</th>
+                  <th style={{ padding: '10px' }}>Chest (in)</th>
+                  <th style={{ padding: '10px' }}>Shoulder (in)</th>
+                  <th style={{ padding: '10px' }}>Length (in)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { s: 'S', c: '38', sh: '17.5', l: '27' },
+                  { s: 'M', c: '40', sh: '18.5', l: '28' },
+                  { s: 'L', c: '42', sh: '19.5', l: '29' },
+                  { s: 'XL', c: '44', sh: '20.5', l: '30' },
+                  { s: 'XXL', c: '46', sh: '21.5', l: '31' },
+                ].map(row => (
+                  <tr key={row.s} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '12px', fontWeight: '900' }}>{row.s}</td>
+                    <td style={{ padding: '12px' }}>{row.c}</td>
+                    <td style={{ padding: '12px' }}>{row.sh}</td>
+                    <td style={{ padding: '12px' }}>{row.l}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <button 
+              onClick={() => setShowSizeGuide(false)}
+              style={{ width: '100%', marginTop: '20px', padding: '12px', background: '#e11b23', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '900', cursor: 'pointer' }}
+            >
+              GOT IT
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useSearchParams, useNavigate } from 'react-router-dom';
-import { ShoppingBag, User as UserIcon, Heart, X, Menu } from 'lucide-react';
+import { ShoppingBag, User as UserIcon, Heart, X, Menu, Search as SearchIcon, AlertCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useUser } from '../context/UserContext';
 import api from '../api/client';
 import { useStoreSettings } from '../hooks/useStoreSettings';
+import { formatPrice, FALLBACK_IMAGE } from '../utils/formatters';
 
 const Navbar = () => {
   const { user } = useUser();
@@ -17,6 +18,13 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const { settings } = useStoreSettings();
+
+  // Search Autocomplete State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const searchRef = useRef(null);
 
   // Loading Bar Logic
   useEffect(() => {
@@ -31,9 +39,43 @@ const Navbar = () => {
 
   const firstName = (user?.username || 'Customer').split(' ')[0].toUpperCase();
 
+  // Live Search Effect
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await api.get(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+        setSearchResults((res.data || []).slice(0, 5));
+        setShowResults(true);
+      } catch (err) {
+        console.error('Search failed', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Close search dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowResults(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Close menu on route change
   useEffect(() => {
     setIsMenuOpen(false);
+    setShowResults(false);
   }, [location.pathname]);
 
   return (
@@ -44,6 +86,20 @@ const Navbar = () => {
       )}
 
 
+
+      {/* Abandoned Cart Reminder Banner */}
+      {cartCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart' && (
+        <div style={{ background: '#212121', color: '#fff', padding: '6px 15px', fontSize: '12px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: '800' }}>
+          <AlertCircle size={14} color="#e11b23" />
+          <span>You left {cartCount} item{cartCount > 1 ? 's' : ''} in your bag!</span>
+          <span 
+            onClick={() => toggleCart(true)} 
+            style={{ color: '#ff4444', textDecoration: 'underline', cursor: 'pointer', marginLeft: '5px' }}
+          >
+            Complete Purchase ➔
+          </span>
+        </div>
+      )}
 
       {/* Main Navbar */}
       <nav className="navbar" style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-primary)' }}>
@@ -60,10 +116,53 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Desktop Search Bar Removed */}
-          <div style={{ flex: 1 }} />
+          {/* Live Search Autocomplete */}
+          <div ref={searchRef} style={{ flex: 1, maxWidth: '400px', margin: '0 20px', position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', background: 'var(--ss-light-grey)', borderRadius: '20px', padding: '6px 14px', border: '1px solid var(--border-color)' }}>
+              <SearchIcon size={16} color="var(--text-secondary)" style={{ marginRight: '8px' }} />
+              <input
+                type="text"
+                placeholder="Search streetwear, jackets, oversized..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => searchQuery.trim() && setShowResults(true)}
+                style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontSize: '13px', color: 'var(--text-primary)', fontFamily: 'inherit' }}
+              />
+              {searchQuery && (
+                <X size={14} color="var(--text-secondary)" style={{ cursor: 'pointer' }} onClick={() => { setSearchQuery(''); setSearchResults([]); }} />
+              )}
+            </div>
 
-          <div style={{ flex: 1 }} />
+            {/* Live Search Results Dropdown */}
+            {showResults && (
+              <div style={{ position: 'absolute', top: '110%', left: 0, right: 0, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.15)', zIndex: 1000, overflow: 'hidden', maxHeight: '380px', overflowY: 'auto' }}>
+                {isSearching ? (
+                  <div style={{ padding: '15px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '12px' }}>Searching products...</div>
+                ) : searchResults.length > 0 ? (
+                  <div>
+                    <div style={{ padding: '8px 15px', fontSize: '10px', fontWeight: '900', color: 'var(--text-secondary)', background: 'var(--ss-light-grey)', borderBottom: '1px solid var(--border-color)', letterSpacing: '1px' }}>MATCHING PRODUCTS</div>
+                    {searchResults.map((item) => (
+                      <Link
+                        key={item.id}
+                        to={`/product/${item.id}`}
+                        onClick={() => setShowResults(false)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 15px', textDecoration: 'none', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', transition: '0.2s' }}
+                      >
+                        <img src={item.image || FALLBACK_IMAGE} alt={item.name} style={{ width: '40px', height: '50px', objectFit: 'cover', borderRadius: '4px', background: '#f0f0f0' }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ margin: 0, fontSize: '13px', fontWeight: '800', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</p>
+                          <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-secondary)' }}>{item.category}</p>
+                        </div>
+                        <span style={{ fontSize: '13px', fontWeight: '900', color: '#e11b23' }}>{formatPrice(item.price)}</span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ padding: '15px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '12px' }}>No products found for "{searchQuery}"</div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Right Icons row */}
           <div className="nav-icons" style={{ color: 'var(--text-primary)' }}>
