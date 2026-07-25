@@ -4,10 +4,12 @@ import api from '../api/client';
 import { Package, Truck, CheckCircle, Home, ArrowLeft, Star, RotateCcw } from 'lucide-react';
 import PageTitle from '../components/PageTitle';
 import { formatPrice, FALLBACK_IMAGE } from '../utils/formatters';
+import { useToast } from '../context/ToastContext';
 
 const OrderDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -179,10 +181,21 @@ const OrderDetails = () => {
                       <p style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)' }}>{formatPrice(item.price)}</p>
                       
                       <div style={{ display: 'flex', gap: '10px' }}>
-                        <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', transition: '0.2s' }}>
+                        <button 
+                          onClick={() => {
+                            const productId = item.id || item.product_id;
+                            if (productId) {
+                              navigate(`/product/${productId}`);
+                            } else {
+                              showToast("Product page not found", "error");
+                            }
+                          }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', transition: '0.2s' }}>
                           <Star size={14} /> REVIEW
                         </button>
-                        <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', transition: '0.2s', color: 'var(--ss-red)' }}>
+                        <button 
+                          onClick={() => showToast("Return request submitted! Our team will contact you shortly.", "success")}
+                          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', transition: '0.2s', color: 'var(--ss-red)' }}>
                           <RotateCcw size={14} /> RETURN
                         </button>
                       </div>
