@@ -2132,4 +2132,55 @@ button:disabled {
   .pdp-left {
     position: static;
   }
-}
+} 
+ 
+/* --- FLIPKART UI STYLES --- */
+.fk-page-bg { background-color: #f1f3f6; min-height: 100vh; padding-bottom: 20px; }
+.fk-card { background: white; margin-bottom: 8px; border-radius: 4px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.1); overflow: hidden; }
+.fk-card-header { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; }
+.fk-card-body { padding: 16px; }
+
+/* My Orders Page */
+.fk-orders-search-container { background: white; padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; }
+.fk-orders-search { flex: 1; display: flex; align-items: center; background: #fff; border: 1px solid #dbdbdb; border-radius: 4px; padding: 8px 12px; }
+.fk-orders-search input { border: none; outline: none; width: 100%; margin-left: 8px; font-size: 14px; }
+.fk-filters { display: flex; gap: 10px; padding: 12px 16px; background: white; border-bottom: 1px solid #eee; overflow-x: auto; scrollbar-width: none; }
+.fk-filters::-webkit-scrollbar { display: none; }
+.fk-filter-chip { padding: 6px 16px; border-radius: 20px; border: 1px solid #dbdbdb; font-size: 14px; color: #333; white-space: nowrap; cursor: pointer; }
+.fk-filter-chip.active { background: #000; color: white; border-color: #000; }
+
+.fk-order-item { padding: 16px; display: flex; gap: 16px; border-bottom: 1px solid #f0f0f0; align-items: flex-start; cursor: pointer; }
+.fk-order-img-container { width: 60px; height: 60px; flex-shrink: 0; }
+.fk-order-img { width: 100%; height: 100%; object-fit: contain; }
+.fk-order-info { flex: 1; }
+.fk-order-status-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.fk-order-status-sub { font-size: 12px; color: #878787; margin-bottom: 12px; }
+.fk-order-rate-section { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f0f0f0; padding-top: 12px; margin-top: 8px; }
+
+/* Order Details Page */
+.fk-order-header { padding: 16px; display: flex; gap: 16px; align-items: flex-start; }
+.fk-order-header-img { width: 70px; height: 70px; object-fit: contain; }
+.fk-order-header-info h2 { font-size: 14px; font-weight: 400; color: #212121; margin-bottom: 4px; }
+.fk-order-header-info p { font-size: 12px; color: #878787; }
+.fk-order-id-section { padding: 12px 16px; background: #fafafa; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f0f0; }
+
+.fk-timeline-container { padding: 20px 16px; position: relative; }
+.fk-timeline-item { display: flex; position: relative; padding-bottom: 30px; }
+.fk-timeline-item:last-child { padding-bottom: 0; }
+.fk-timeline-line { position: absolute; left: 6px; top: 12px; bottom: -12px; width: 2px; background: #e0e0e0; z-index: 1; }
+.fk-timeline-item:last-child .fk-timeline-line { display: none; }
+.fk-timeline-line.active { background: #26a541; }
+.fk-timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: #e0e0e0; position: relative; z-index: 2; flex-shrink: 0; margin-right: 16px; margin-top: 2px; }
+.fk-timeline-dot.active { background: #26a541; }
+.fk-timeline-content { flex: 1; }
+.fk-timeline-title { font-size: 14px; font-weight: 500; color: #212121; }
+.fk-timeline-sub { font-size: 12px; color: #878787; margin-top: 4px; }
+.fk-timeline-substep { font-size: 12px; color: #212121; margin-top: 8px; margin-bottom: 2px; }
+
+.fk-accordion-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; font-size: 16px; font-weight: 600; color: #212121; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
+.fk-accordion-content { padding: 16px; }
+.fk-detail-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
+.fk-detail-row.total { border-top: 1px dashed #e0e0e0; padding-top: 12px; font-weight: 600; font-size: 16px; margin-top: 12px; margin-bottom: 16px; }
+
+.fk-download-invoice { display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #d7d7d7; padding: 10px; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; background: white; width: 100%; margin-top: 16px; }
+
