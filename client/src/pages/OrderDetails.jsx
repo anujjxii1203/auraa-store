@@ -5,8 +5,6 @@ import { Package, Truck, CheckCircle, Home, ArrowLeft, Star, RotateCcw } from 'l
 import PageTitle from '../components/PageTitle';
 import { formatPrice, FALLBACK_IMAGE } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 const OrderDetails = () => {
   const { id } = useParams();
@@ -152,13 +150,16 @@ const OrderDetails = () => {
 
   const currentStep = getStatusStep(order.status);
 
-  const generateInvoice = () => {
+  const generateInvoice = async () => {
     if (!order) return;
+    
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
     
     const doc = new jsPDF();
     
     doc.setFontSize(22);
-    doc.setTextColor(225, 27, 35); // AURA red
+    doc.setTextColor(225, 27, 35);
     doc.text('AURA STORE', 14, 20);
     
     doc.setFontSize(10);
