@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/client';
-import { Search } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import '../assets/AdminProducts.css';
 
 const AdminReturns = () => {
@@ -30,6 +30,18 @@ const AdminReturns = () => {
     } catch (err) {
       console.error('Failed to update return status', err);
       alert('Failed to update status');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this return request?')) {
+      try {
+        await api.delete(`/admin/returns/${id}`);
+        fetchReturns();
+      } catch (err) {
+        console.error('Failed to delete return', err);
+        alert('Failed to delete return request');
+      }
     }
   };
 
@@ -85,6 +97,7 @@ const AdminReturns = () => {
               <th>Reason</th>
               <th>Status</th>
               <th>Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -124,10 +137,20 @@ const AdminReturns = () => {
                     {new Date(ret.created_at).toLocaleDateString()}
                   </span>
                 </td>
+                <td>
+                  <button 
+                    onClick={() => handleDelete(ret.id)}
+                    className="action-btn delete"
+                    title="Delete Return Request"
+                    style={{ background: 'transparent', border: 'none', color: '#dc3545', cursor: 'pointer', padding: '5px' }}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </td>
               </tr>
             )) : (
               <tr>
-                <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
                   No returns found
                 </td>
               </tr>

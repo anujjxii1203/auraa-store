@@ -1753,6 +1753,11 @@ app.patch('/api/admin/returns/:id/status', authenticateAdmin, requirePermission(
   res.json({ message: 'Return status updated successfully' });
 }));
 
+app.delete('/api/admin/returns/:id', authenticateAdmin, requirePermission('manage_orders'), asyncHandler(async (req, res) => {
+  await run('DELETE FROM returns WHERE id = ?', [req.params.id]);
+  res.json({ message: 'Return request deleted successfully' });
+}));
+
 // --- REVIEWS ---
 app.post('/api/reviews', authenticateUser, asyncHandler(async (req, res) => {
   const { productId, product_id, rating, comment } = req.body;
