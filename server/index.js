@@ -1468,6 +1468,21 @@ app.post('/api/admin/admin-users', authenticateAdmin, requirePermission('all_per
 }));
 
 
+// Helper to safely save idempotency keys without duplicate key crashes
+const saveIdempotencyKey = async (key, userId, endpoint, body) => {
+  if (!key) return;
+  try {
+    const existing = await get('SELECT key FROM idempotency_keys WHERE key = ?', [key]);
+    if (existing) {
+      await run('UPDATE idempotency_keys SET response_body = ? WHERE key = ?', [JSON.stringify(body), key]);
+    } else {
+      await run('INSERT INTO idempotency_keys (key, user_id, endpoint, response_body) VALUES (?, ?, ?, ?)', [key, userId, endpoint, JSON.stringify(body)]);
+    }
+  } catch (err) {
+    console.error('Idempotency save non-fatal error:', err.message);
+  }
+};
+
 // --- RAZORPAY ROUTES ---
 app.post('/api/payments/razorpay-order', requireAuth, asyncHandler(async (req, res) => {
   const idempotencyKey = req.headers['idempotency-key'];
@@ -1488,9 +1503,7 @@ app.post('/api/payments/razorpay-order', requireAuth, asyncHandler(async (req, r
   if (!process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID.includes('YOUR_KEY_ID')) {
     // Return a mock order if no keys configured
     const mockOrder = { id: `order_mock_${Date.now()}`, amount: amount * 100, currency: 'INR' };
-    if (idempotencyKey) {
-      await run('INSERT INTO idempotency_keys (key, user_id, endpoint, response_body) VALUES (?, ?, ?, ?)', [idempotencyKey, req.auth.id, '/api/payments/razorpay-order', JSON.stringify(mockOrder)]);
-    }
+    await saveIdempotencyKey(idempotencyKey, req.auth.id, '/api/payments/razorpay-order', mockOrder);
     res.json(mockOrder);
     return;
   }
@@ -1503,9 +1516,7 @@ app.post('/api/payments/razorpay-order', requireAuth, asyncHandler(async (req, r
 
   try {
     const order = await razorpayInstance.orders.create(options);
-    if (idempotencyKey) {
-      await run('INSERT INTO idempotency_keys (key, user_id, endpoint, response_body) VALUES (?, ?, ?, ?)', [idempotencyKey, req.auth.id, '/api/payments/razorpay-order', JSON.stringify(order)]);
-    }
+    await saveIdempotencyKey(idempotencyKey, req.auth.id, '/api/payments/razorpay-order', order);
     res.json(order);
   } catch (error) {
     console.error("Razorpay order creation error:", error);
@@ -1634,9 +1645,7 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
       },
     };
 
-    if (idempotencyKey) {
-      await run('INSERT INTO idempotency_keys (key, user_id, endpoint, response_body) VALUES (?, ?, ?, ?)', [idempotencyKey, req.auth.id, '/api/payments', JSON.stringify(responsePayload)]);
-    }
+    await saveIdempotencyKey(idempotencyKey, req.auth.id, '/api/payments', responsePayload);
 
     res.status(201).json(responsePayload);
     return;
@@ -1720,9 +1729,7 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
       },
     };
 
-    if (idempotencyKey) {
-      await run('INSERT INTO idempotency_keys (key, user_id, endpoint, response_body) VALUES (?, ?, ?, ?)', [idempotencyKey, req.auth.id, '/api/payments', JSON.stringify(responsePayload)]);
-    }
+    await saveIdempotencyKey(idempotencyKey, req.auth.id, '/api/payments', responsePayload);
 
     res.status(201).json(responsePayload);
     return;

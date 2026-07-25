@@ -189,7 +189,7 @@ const Checkout = () => {
           };
           const verifyResponse = await api.post('/payments', verifyPayload, {
             headers: {
-              'Idempotency-Key': idempotencyKey
+              'Idempotency-Key': uuidv4()
             }
           });
           saveOrder(verifyResponse.data.payment);
@@ -242,7 +242,7 @@ const Checkout = () => {
 
             const verifyResponse = await api.post('/payments', verifyPayload, {
               headers: {
-                'Idempotency-Key': idempotencyKey
+                'Idempotency-Key': uuidv4()
               }
             });
             saveOrder(verifyResponse.data.payment);
