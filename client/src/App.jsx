@@ -4,6 +4,7 @@ import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { UserProvider } from './context/UserContext';
 import Navbar from './components/Navbar';
+import Home from './pages/Home';
 import Men from './pages/Men';
 import Women from './pages/Women';
 import Footwear from './pages/Footwear';
@@ -111,7 +112,7 @@ function App() {
                     <Route path="/admin-data" element={<AdminStats />} />
 
                   <Route element={<MainLayout />}>
-                    <Route path="/" element={<Navigate to="/men" replace />} />
+                    <Route path="/" element={<Home />} />
                     <Route path="/men" element={<Men />} />
                     <Route path="/women" element={<Women />} />
                     <Route path="/footwear" element={<Footwear />} />
