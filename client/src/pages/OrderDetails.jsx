@@ -12,13 +12,13 @@ const OrderDetails = () => {
   const { showToast } = useToast();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   // States for Review Modal
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewProduct, setReviewProduct] = useState(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
-  
+
   // States for Return Modal
   const [returnModalOpen, setReturnModalOpen] = useState(false);
   const [returnProduct, setReturnProduct] = useState(null);
@@ -40,11 +40,11 @@ const OrderDetails = () => {
         hasPhoto: !!returnPhoto
       });
 
-      await api.post('/returns', { 
-        orderId: order.id, 
-        productId: returnProduct.id || returnProduct.product_id, 
-        productName: returnProduct.name, 
-        reason: payload 
+      await api.post('/returns', {
+        orderId: order.id,
+        productId: returnProduct.id || returnProduct.product_id,
+        productName: returnProduct.name,
+        reason: payload
       });
       showToast("Return request submitted! Our team will contact you shortly.", "success");
       setReturnModalOpen(false);
@@ -52,23 +52,23 @@ const OrderDetails = () => {
       setReturnDetails("");
       setReturnType("refund");
       setReturnPhoto(null);
-    } catch(err) {
+    } catch (err) {
       showToast("Failed to submit return request", "error");
     }
   };
 
   const handleReviewSubmit = async () => {
     try {
-      await api.post('/reviews', { 
-        productId: reviewProduct.id || reviewProduct.product_id, 
-        rating, 
-        comment 
+      await api.post('/reviews', {
+        productId: reviewProduct.id || reviewProduct.product_id,
+        rating,
+        comment
       });
       showToast("Review submitted successfully!", "success");
       setReviewModalOpen(false);
       setComment("");
       setRating(5);
-    } catch(err) {
+    } catch (err) {
       showToast("Failed to submit review", "error");
     }
   };
@@ -79,12 +79,12 @@ const OrderDetails = () => {
         const res = await api.get('/orders/me');
         // Find the specific order from the list
         const foundOrder = res.data.find(o => o.id.toString() === id || o.reference === id);
-        
+
         if (foundOrder) {
           let parsedMeta = {};
           try {
             parsedMeta = typeof foundOrder.metadata === 'string' ? JSON.parse(foundOrder.metadata) : (foundOrder.metadata || {});
-          } catch(e) {
+          } catch (e) {
             console.error("Failed to parse metadata", e);
           }
           const items = Array.isArray(parsedMeta) ? parsedMeta : (parsedMeta.items || []);
@@ -108,7 +108,7 @@ const OrderDetails = () => {
         setLoading(false);
       }
     };
-    
+
     fetchOrderDetails();
   }, [id]);
 
@@ -128,8 +128,8 @@ const OrderDetails = () => {
         <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
           <h2>Order not found</h2>
           <p style={{ marginTop: '10px', color: '#666' }}>We couldn't find the details for this order.</p>
-          <button 
-            onClick={() => navigate('/profile')} 
+          <button
+            onClick={() => navigate('/profile')}
             style={{ marginTop: '20px', padding: '10px 20px', background: 'var(--text-primary)', color: 'var(--bg-primary)', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
           >
             Back to Orders
@@ -152,32 +152,32 @@ const OrderDetails = () => {
 
   const generateInvoice = async () => {
     if (!order) return;
-    
+
     const { default: jsPDF } = await import('jspdf');
     const { default: autoTable } = await import('jspdf-autotable');
-    
+
     const doc = new jsPDF();
-    
+
     doc.setFontSize(22);
     doc.setTextColor(225, 27, 35);
     doc.text('AURA STORE', 14, 20);
-    
+
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
     doc.text('Invoice generated on: ' + new Date().toLocaleDateString(), 14, 28);
-    
+
     doc.setFontSize(14);
     doc.setTextColor(0, 0, 0);
     doc.text(`Order Reference: #${order.reference || order.id}`, 14, 40);
-    
+
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
     doc.text(`Order Date: ${order.date}`, 14, 46);
     doc.text(`Payment Method: ${order.method === 'cod' ? 'Cash On Delivery' : 'Online Payment'}`, 14, 52);
-    
+
     const tableColumn = ["Item Name", "Size", "Qty", "Price", "Total"];
     const tableRows = [];
-    
+
     order.items.forEach(item => {
       const itemData = [
         item.name,
@@ -188,7 +188,7 @@ const OrderDetails = () => {
       ];
       tableRows.push(itemData);
     });
-    
+
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
@@ -196,35 +196,35 @@ const OrderDetails = () => {
       theme: 'grid',
       headStyles: { fillColor: [225, 27, 35] },
     });
-    
+
     const finalY = doc.lastAutoTable.finalY || 65;
-    
+
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
     doc.text('Price Details', 14, finalY + 15);
-    
+
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    
+
     const subtotal = order.items.reduce((acc, item) => acc + (item.price * (item.quantity || 1)), 0);
-    
+
     doc.text(`Subtotal: Rs. ${subtotal.toFixed(2)}`, 14, finalY + 23);
     doc.text(`Shipping: Free`, 14, finalY + 29);
     doc.text(`GST / Tax (Included): Rs. ${(subtotal * 0.18).toFixed(2)}`, 14, finalY + 35);
-    
+
     doc.setFontSize(12);
     doc.setTextColor(225, 27, 35);
     doc.text(`Total Amount: Rs. ${order.total.toFixed(2)}`, 14, finalY + 45);
-    
+
     doc.save(`AURA_Invoice_${order.reference || order.id}.pdf`);
   };
 
   return (
     <div style={{ padding: '60px 20px', minHeight: '80vh', background: 'var(--bg-primary)' }}>
       <PageTitle title={`Order #${order.reference}`} />
-      
+
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <button 
+        <button
           onClick={() => navigate('/profile')}
           style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '700', marginBottom: '30px', color: 'var(--text-primary)' }}
         >
@@ -252,12 +252,12 @@ const OrderDetails = () => {
             {/* Tracking Timeline */}
             <div style={{ background: 'var(--bg-secondary)', padding: '30px', borderRadius: '12px', marginBottom: '20px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: '800', marginBottom: '25px', color: 'var(--text-primary)' }}>ORDER STATUS</h3>
-              
+
               <div style={{ position: 'relative', margin: '0 10px' }}>
                 {/* Connecting line */}
                 <div style={{ position: 'absolute', top: 20, bottom: 20, left: 19, width: '2px', background: '#e0e0e0', zIndex: 1 }} />
                 <div style={{ position: 'absolute', top: 20, left: 19, width: '2px', background: 'var(--teal)', zIndex: 2, height: currentStep >= 3 ? '100%' : currentStep === 2 ? '66%' : currentStep === 1 ? '33%' : '0%', transition: 'height 0.5s ease' }} />
-                
+
                 {/* Step 1: PLACED */}
                 <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '30px', position: 'relative', zIndex: 3 }}>
                   <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--teal)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -316,14 +316,14 @@ const OrderDetails = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Support */}
             <div style={{ marginTop: '30px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: '800', marginBottom: '15px', color: 'var(--text-primary)' }}>NEED HELP?</h3>
               <p style={{ fontSize: '13px', color: '#666', marginBottom: '20px', lineHeight: '1.5' }}>
                 If you have any issues with your order, returns, or payment, our support team is available 24/7.
               </p>
-              <button 
+              <button
                 onClick={() => window.location.href = 'mailto:support@auraa.com'}
                 style={{ width: '100%', padding: '12px', background: 'var(--text-primary)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', transition: '0.2s', textTransform: 'uppercase' }}>
                 Contact Support
@@ -351,9 +351,9 @@ const OrderDetails = () => {
                 {order.items.map((item, idx) => (
                   <div key={idx} className="order-item-card">
                     <div className="order-item-image-wrapper">
-                      <img 
-                        src={item.image || FALLBACK_IMAGE} 
-                        alt={item.name} 
+                      <img
+                        src={item.image || FALLBACK_IMAGE}
+                        alt={item.name}
                         className="order-item-image"
                         style={{ background: '#e0e0e0' }}
                         onError={(e) => { e.target.src = FALLBACK_IMAGE }}
@@ -366,12 +366,12 @@ const OrderDetails = () => {
                           Size: {item.selectedSize || item.size} | Qty: {item.quantity || 1}
                         </p>
                       </div>
-                      
+
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '15px' }}>
-                        <p style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)' }}>{formatPrice(item.price)}</p>
-                        
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                          <button 
+                        <p style={{ margin: '13px', fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)' }}>{formatPrice(item.price)}</p>
+
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                          <button
                             className="order-action-btn review"
                             onClick={() => {
                               setReviewProduct(item);
@@ -379,7 +379,7 @@ const OrderDetails = () => {
                             }}>
                             <Star size={14} fill="currentColor" /> REVIEW
                           </button>
-                          <button 
+                          <button
                             className="order-action-btn return"
                             onClick={() => {
                               setReturnProduct(item);
@@ -418,15 +418,15 @@ const OrderDetails = () => {
                 <span style={{ fontWeight: '800', color: 'var(--text-primary)' }}>Total amount</span>
                 <span style={{ fontWeight: '900', color: 'var(--ss-red)' }}>{formatPrice(order.total)}</span>
               </div>
-              
+
               <div style={{ marginTop: '20px', padding: '15px', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '13px', color: '#666', fontWeight: '700' }}>Paid By</span>
                 <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)' }}>
                   {order.method === 'cod' ? 'Cash On Delivery' : 'Online Payment'}
                 </span>
               </div>
-              
-              <button 
+
+              <button
                 onClick={generateInvoice}
                 style={{ width: '100%', marginTop: '15px', padding: '12px', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1.5px solid var(--border-color)', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -445,10 +445,10 @@ const OrderDetails = () => {
               <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Rating (1-5)</label>
               <div style={{ display: 'flex', gap: '10px' }}>
                 {[1, 2, 3, 4, 5].map(num => (
-                  <Star 
-                    key={num} 
-                    size={24} 
-                    fill={num <= rating ? 'var(--ss-red)' : 'none'} 
+                  <Star
+                    key={num}
+                    size={24}
+                    fill={num <= rating ? 'var(--ss-red)' : 'none'}
                     color={num <= rating ? 'var(--ss-red)' : '#ccc'}
                     style={{ cursor: 'pointer' }}
                     onClick={() => setRating(num)}
@@ -458,7 +458,7 @@ const OrderDetails = () => {
             </div>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Comments</label>
-              <textarea 
+              <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="What did you think about this product?"
@@ -466,13 +466,13 @@ const OrderDetails = () => {
               />
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
-              <button 
+              <button
                 onClick={() => setReviewModalOpen(false)}
                 style={{ padding: '10px 20px', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '700' }}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleReviewSubmit}
                 style={{ padding: '10px 20px', background: 'var(--ss-red)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}
               >
@@ -488,18 +488,18 @@ const OrderDetails = () => {
           <div style={{ background: 'var(--bg-primary)', padding: '30px', borderRadius: '12px', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
             <h2 style={{ marginTop: 0, marginBottom: '5px', fontSize: '20px', fontWeight: '800' }}>Return: {returnProduct?.name}</h2>
             <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', marginBottom: '20px' }} />
-            
+
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Reason *</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {["Size too small / large", "Wrong item received", "Damaged / defective", "Not as described", "Changed my mind"].map((reason) => (
                   <label key={reason} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
-                    <input 
-                      type="radio" 
+                    <input
+                      type="radio"
                       name="returnReason"
-                      value={reason} 
-                      checked={returnReason === reason} 
-                      onChange={(e) => setReturnReason(e.target.value)} 
+                      value={reason}
+                      checked={returnReason === reason}
+                      onChange={(e) => setReturnReason(e.target.value)}
                     />
                     {reason}
                   </label>
@@ -509,7 +509,7 @@ const OrderDetails = () => {
 
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Additional details (optional)</label>
-              <textarea 
+              <textarea
                 value={returnDetails}
                 onChange={(e) => setReturnDetails(e.target.value)}
                 placeholder="Please explain in more detail..."
@@ -543,13 +543,13 @@ const OrderDetails = () => {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
-              <button 
+              <button
                 onClick={() => setReturnModalOpen(false)}
                 style={{ padding: '10px 20px', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '700' }}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleReturnSubmit}
                 style={{ padding: '10px 20px', background: 'var(--ss-red)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}
               >

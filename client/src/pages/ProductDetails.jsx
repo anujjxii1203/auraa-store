@@ -44,6 +44,7 @@ const ProductDetails = () => {
   // Review State
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [hasPurchased, setHasPurchased] = useState(false);
 
   const fetchProduct = async () => {
     try {
@@ -68,6 +69,37 @@ const ProductDetails = () => {
     fetchProduct();
     window.scrollTo(0, 0);
   }, [id]);
+
+  useEffect(() => {
+    const checkPurchaseStatus = async () => {
+      if (user) {
+        try {
+          const res = await api.get('/orders/me');
+          const orders = res.data;
+          const purchased = orders.some(order => {
+             // ensure it's a paid/completed order
+             if (order.status !== 'paid' && order.status !== 'completed' && !['processing', 'shipped', 'delivered'].includes(order.status_track)) {
+                 return false;
+             }
+             let items = [];
+             if (typeof order.metadata === 'string') {
+               try { items = JSON.parse(order.metadata); } catch(e) {}
+             } else {
+               items = order.metadata || [];
+             }
+             const itemsArr = Array.isArray(items) ? items : (items.items || []);
+             return itemsArr.some(item => (item.id || item.product_id).toString() === id.toString());
+          });
+          setHasPurchased(purchased);
+        } catch (e) {
+          console.error("Failed to check purchase status", e);
+        }
+      } else {
+        setHasPurchased(false);
+      }
+    };
+    checkPurchaseStatus();
+  }, [id, user]);
 
   const handleAddToCart = () => {
     addToCart({ ...product, selectedSize, quantity });
@@ -204,23 +236,29 @@ const ProductDetails = () => {
             <AccordionItem title={`Customer Reviews (${product.reviews?.length || 0})`}>
               <div style={{ marginBottom: '30px' }}>
                 <h4 style={{ fontSize: '15px', fontWeight: '800', marginBottom: '15px' }}>Write a Review</h4>
-                <form onSubmit={handleReviewSubmit}>
-                  <div style={{ display: 'flex', gap: '5px', marginBottom: '15px' }}>
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <Star key={star} size={20} fill={star <= reviewForm.rating ? '#ffc107' : 'none'} color={star <= reviewForm.rating ? '#ffc107' : '#ccc'} style={{ cursor: 'pointer' }} onClick={() => setReviewForm({ ...reviewForm, rating: star })} />
-                    ))}
+                {hasPurchased ? (
+                  <form onSubmit={handleReviewSubmit}>
+                    <div style={{ display: 'flex', gap: '5px', marginBottom: '15px' }}>
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <Star key={star} size={20} fill={star <= reviewForm.rating ? '#ffc107' : 'none'} color={star <= reviewForm.rating ? '#ffc107' : '#ccc'} style={{ cursor: 'pointer' }} onClick={() => setReviewForm({ ...reviewForm, rating: star })} />
+                      ))}
+                    </div>
+                    <textarea 
+                      value={reviewForm.comment} 
+                      onChange={e => setReviewForm({ ...reviewForm, comment: e.target.value })} 
+                      style={{ width: '100%', padding: '12px', borderRadius: '4px', border: '1px solid #ddd', height: '80px', marginBottom: '10px', fontFamily: 'inherit' }} 
+                      required 
+                      placeholder="Tell us what you think..." 
+                    />
+                    <button type="submit" disabled={isSubmittingReview} className="btn-ss-secondary" style={{ width: 'auto', padding: '10px 20px', fontSize: '12px' }}>
+                      {isSubmittingReview ? 'SUBMITTING...' : 'SUBMIT REVIEW'}
+                    </button>
+                  </form>
+                ) : (
+                  <div style={{ padding: '20px', background: 'var(--ss-light-grey)', borderRadius: '8px', border: '1px dashed #ccc' }}>
+                    <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)' }}>You can only review products that you have purchased.</p>
                   </div>
-                  <textarea 
-                    value={reviewForm.comment} 
-                    onChange={e => setReviewForm({ ...reviewForm, comment: e.target.value })} 
-                    style={{ width: '100%', padding: '12px', borderRadius: '4px', border: '1px solid #ddd', height: '80px', marginBottom: '10px', fontFamily: 'inherit' }} 
-                    required 
-                    placeholder="Tell us what you think..." 
-                  />
-                  <button type="submit" disabled={isSubmittingReview} className="btn-ss-secondary" style={{ width: 'auto', padding: '10px 20px', fontSize: '12px' }}>
-                    {isSubmittingReview ? 'SUBMITTING...' : 'SUBMIT REVIEW'}
-                  </button>
-                </form>
+                )}
               </div>
 
               {product.reviews?.length === 0 ? (
