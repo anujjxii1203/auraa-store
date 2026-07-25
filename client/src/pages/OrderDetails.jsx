@@ -149,6 +149,7 @@ const OrderDetails = () => {
   };
 
   const currentStep = getStatusStep(order.status);
+  const isCancelled = (order.status || '').toLowerCase() === 'cancelled';
 
   const generateInvoice = async () => {
     if (!order) return;

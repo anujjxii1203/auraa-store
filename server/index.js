@@ -1675,7 +1675,7 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
 
     // Update user points: debit redeemed points, then award earned points.
     if (pointsToDebit > 0) {
-      await run('UPDATE users SET points = GREATEST(0, points - ?) WHERE id = ?', [pointsToDebit, req.auth.id]);
+      await run('UPDATE users SET points = CASE WHEN COALESCE(points, 0) - ? < 0 THEN 0 ELSE points - ? END WHERE id = ?', [pointsToDebit, pointsToDebit, req.auth.id]);
     }
     const pointsEarned = Math.floor(amount * 0.1);
     await run('UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?', [pointsEarned, req.auth.id]);
@@ -1758,7 +1758,7 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
     // Debit any redeemed points now, at order placement (the discount is applied
     // to this order regardless of when the COD payment is collected).
     if (pointsToDebit > 0) {
-      await run('UPDATE users SET points = GREATEST(0, points - ?) WHERE id = ?', [pointsToDebit, req.auth.id]);
+      await run('UPDATE users SET points = CASE WHEN COALESCE(points, 0) - ? < 0 THEN 0 ELSE points - ? END WHERE id = ?', [pointsToDebit, pointsToDebit, req.auth.id]);
     }
 
     if (metadata && metadata.items && Array.isArray(metadata.items)) {
