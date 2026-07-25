@@ -244,21 +244,6 @@ const OrderDetails = () => {
               {formatPrice(order.total)}
             </h2>
             <div style={{ display: 'flex', gap: '8px', marginTop: '5px' }}>
-              <button
-                onClick={generateInvoice}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '6px',
-                  background: '#008080',
-                  color: '#fff',
-                  border: 'none',
-                  fontWeight: '800',
-                  fontSize: '12px',
-                  cursor: 'pointer'
-                }}
-              >
-                DOWNLOAD INVOICE (PDF)
-              </button>
               {order.status === 'processing' && (
                 <button
                   onClick={async () => {
@@ -469,13 +454,6 @@ const OrderDetails = () => {
                   {order.method === 'cod' ? 'Cash On Delivery' : 'Online Payment'}
                 </span>
               </div>
-
-              <button
-                onClick={generateInvoice}
-                style={{ width: '100%', marginTop: '15px', padding: '12px', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1.5px solid var(--border-color)', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                Download Invoice
-              </button>
             </div>
           </div>
         </div>

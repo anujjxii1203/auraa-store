@@ -147,7 +147,7 @@ const Checkout = () => {
         try {
           const meRes = await api.get('/me');
           updateUser(meRes.data.user);
-        } catch(e) {}
+        } catch (e) { }
 
         setTimeout(() => {
           clearCart();
@@ -199,7 +199,7 @@ const Checkout = () => {
           try {
             const meRes = await api.get('/me');
             updateUser(meRes.data.user);
-          } catch(e) {}
+          } catch (e) { }
 
           setTimeout(() => {
             clearCart();
@@ -250,7 +250,7 @@ const Checkout = () => {
             try {
               const meRes = await api.get('/me');
               updateUser(meRes.data.user);
-            } catch(e) {}
+            } catch (e) { }
             triggerConfetti();
             setTimeout(() => {
               clearCart();
@@ -542,24 +542,24 @@ const Checkout = () => {
             {userPoints > 0 && (
               <div style={{ marginBottom: '20px', padding: '15px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={usePoints} 
-                    onChange={(e) => setUsePoints(e.target.checked)} 
+                  <input
+                    type="checkbox"
+                    checked={usePoints}
+                    onChange={(e) => setUsePoints(e.target.checked)}
                     style={{ width: '16px', height: '16px', accentColor: '#008080' }}
                   />
                   <span>Redeem Aura Points ({userPoints} pts)</span>
                 </label>
                 <AnimatePresence>
                   {usePoints && (
-                    <motion.div 
-                      initial={{ opacity: 0, height: 0, marginTop: 0 }} 
-                      animate={{ opacity: 1, height: 'auto', marginTop: 8 }} 
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                      animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
                       exit={{ opacity: 0, height: 0, marginTop: 0 }}
                       style={{ overflow: 'hidden' }}
                     >
                       <div style={{ padding: '8px 12px', background: 'rgba(0, 128, 128, 0.08)', border: '1px dashed #008080', borderRadius: '6px', fontSize: '12px', color: '#008080', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span>🎉 Aura Points Applied! Total updated: <span style={{ textDecoration: 'line-through', color: '#888', marginLeft: '4px' }}>{formatPrice(Math.round(cartTotal * 1.05))}</span> ➔ <span style={{ color: '#008080', fontWeight: '950', fontSize: '13px' }}>{formatPrice(finalTotal)}</span></span>
+                        <span>🎉 Aura Points Applied!</span>
                       </div>
                     </motion.div>
                   )}
@@ -586,8 +586,8 @@ const Checkout = () => {
               <span style={{ color: 'var(--text-primary)' }}>TOTAL</span>
               <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                 {(pointsDiscount > 0 || discountAmount > 0) && (
-                  <motion.span 
-                    initial={{ opacity: 0, x: 10 }} 
+                  <motion.span
+                    initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                     style={{ fontSize: '14px', textDecoration: 'line-through', color: '#888', fontWeight: '700', marginBottom: '-2px' }}
                   >
