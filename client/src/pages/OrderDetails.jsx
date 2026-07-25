@@ -74,6 +74,7 @@ const OrderDetails = () => {
             total: foundOrder.amount,
             status: (foundOrder.status_track || 'processing').toLowerCase(),
             payment_status: foundOrder.status,
+            method: foundOrder.method,
             razorpay_order_id: foundOrder.razorpay_order_id,
             items: items
           };
@@ -311,7 +312,7 @@ const OrderDetails = () => {
               <div style={{ marginTop: '20px', padding: '15px', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '13px', color: '#666', fontWeight: '700' }}>Paid By</span>
                 <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)' }}>
-                  {order.payment_status === 'paid' ? 'Online Payment' : 'Cash On Delivery'}
+                  {order.method === 'cod' ? 'Cash On Delivery' : 'Online Payment'}
                 </span>
               </div>
               

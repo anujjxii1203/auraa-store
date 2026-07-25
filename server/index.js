@@ -431,6 +431,7 @@ function normalizePaymentPayload(body) {
       amount,
       method,
       metadata: {
+        ...(body.metadata || {}),
         brand: cardNumber.startsWith('4') ? 'Visa' : 'Card',
         last4: cardNumber.slice(-4),
       },
@@ -450,6 +451,7 @@ function normalizePaymentPayload(body) {
       amount,
       method,
       metadata: {
+        ...(body.metadata || {}),
         upi: `${handle.slice(0, 2)}***@${upiId.split('@')[1]}`,
       },
     };
@@ -459,6 +461,7 @@ function normalizePaymentPayload(body) {
     amount,
     method,
     metadata: {
+      ...(body.metadata || {}),
       note: 'Collect payment at delivery',
     },
   };
