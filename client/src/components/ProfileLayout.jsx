@@ -23,7 +23,7 @@ const ProfileLayout = () => {
   };
 
   return (
-    <div className="container" style={{ padding: '20px' }}>
+    <div className="container" style={{ padding: '1px' }}>
       <PageTitle title="My Account" />
       <BackButton />
       <div className="profile-wrapper" style={{ marginTop: '20px' }}>
@@ -37,13 +37,13 @@ const ProfileLayout = () => {
               <h2 style={{ fontSize: '20px', fontWeight: '950', color: 'var(--text-primary)' }}>{(user?.username || 'Customer').toUpperCase()}</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{user?.email || ''}</p>
             </div>
-            
+
             <div className="points-card" style={{ background: '#212121', color: '#fff', margin: '20px 0 10px', padding: '15px', borderRadius: '8px', border: '1px solid #333', textAlign: 'left' }}>
               <div style={{ fontSize: '11px', color: '#aaa', fontWeight: '800', letterSpacing: '1px', marginBottom: '5px' }}>AURA POINTS</div>
               <div style={{ fontSize: '24px', fontWeight: '900', color: '#ff4444' }}>{user?.points || 0}</div>
             </div>
           </div>
-          
+
           <nav className="profile-sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
             <Link to="/profile" style={{ textDecoration: 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: path === '/profile' ? 'var(--bg-primary)' : 'transparent', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: path === '/profile' ? '#008080' : 'var(--text-primary)' }}>
@@ -65,7 +65,7 @@ const ProfileLayout = () => {
                 <SettingsIcon size={18} /> SETTINGS
               </div>
             </Link>
-            
+
             <div onClick={() => { logout(); navigate('/'); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: 'var(--text-primary)', marginTop: '20px', borderTop: '1px solid var(--border-color)' }}>
               <LogOut size={18} /> LOGOUT
             </div>
