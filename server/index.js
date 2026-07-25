@@ -1172,13 +1172,37 @@ app.get('/api/admin/analytics', authenticateAdmin, requirePermission('view_dashb
     sales: daysMap[key]
   }));
 
+  const lowStockProducts = await all("SELECT id, name, category, price, stock FROM products WHERE stock <= 5 AND deleted_at IS NULL ORDER BY stock ASC");
+
   res.json({
     totalRevenue: Number(totalRevenueRow?.total) || 0,
     totalOrders: Number(totalOrdersRow?.count) || 0,
     totalCustomers: Number(totalCustomersRow?.count) || 0,
     activeCarts: Number(activeCartsRow?.count) || 0,
-    salesGraph
+    salesGraph,
+    lowStockProducts
   });
+}));
+
+app.get('/api/admin/reports/sales-csv', authenticateAdmin, requirePermission('view_dashboard'), asyncHandler(async (req, res) => {
+  const payments = await all(`
+    SELECT p.id, p.reference, p.amount, p.status, p.status_track, p.method, p.created_at, u.username, u.email
+    FROM payments p
+    LEFT JOIN users u ON p.user_id = u.id
+    ORDER BY p.created_at DESC
+  `);
+
+  let csvContent = 'Order ID,Reference,Customer Name,Customer Email,Amount (INR),Payment Status,Order Status,Method,Date\n';
+  payments.forEach(p => {
+    const date = new Date(p.created_at).toLocaleString().replace(/,/g, '');
+    const name = (p.username || 'Guest').replace(/,/g, '');
+    const email = (p.email || 'N/A').replace(/,/g, '');
+    csvContent += `"${p.id}","${p.reference || ''}","${name}","${email}",${p.amount},"${p.status}","${p.status_track || 'processing'}","${p.method}","${date}"\n`;
+  });
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="sales_report.csv"');
+  res.status(200).send(csvContent);
 }));
 
 app.get('/api/admin/audit-logs', authenticateAdmin, requirePermission('view_dashboard'), asyncHandler(async (req, res) => {

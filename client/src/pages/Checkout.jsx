@@ -57,8 +57,14 @@ const Checkout = () => {
   const [paymentError, setPaymentError] = useState('');
   const [isPaying, setIsPaying] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [usePoints, setUsePoints] = useState(false);
   const navigate = useNavigate();
-  const finalTotal = Math.round(cartTotal * 1.05);
+
+  const userPoints = user?.points || 0;
+  const maxDiscountFromPoints = Math.floor(userPoints / 10);
+  const pointsDiscount = usePoints ? Math.min(maxDiscountFromPoints, Math.floor(cartTotal * 0.5)) : 0;
+  const pointsUsed = pointsDiscount * 10;
+  const finalTotal = Math.max(0, Math.round((cartTotal - pointsDiscount) * 1.05));
 
   useEffect(() => {
     if (!user) {
@@ -531,10 +537,36 @@ const Checkout = () => {
               )}
             </div>
 
+            {/* Aura Points Redemption Block */}
+            {userPoints > 0 && (
+              <div style={{ marginBottom: '20px', padding: '15px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={usePoints} 
+                    onChange={(e) => setUsePoints(e.target.checked)} 
+                    style={{ width: '16px', height: '16px', accentColor: '#008080' }}
+                  />
+                  <span>Redeem Aura Points ({userPoints} pts)</span>
+                </label>
+                {usePoints && (
+                  <p style={{ margin: '6px 0 0 26px', fontSize: '11px', color: '#008080', fontWeight: '700' }}>
+                    Saves {formatPrice(pointsDiscount)} ({pointsUsed} pts used)
+                  </p>
+                )}
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '14px', color: 'var(--text-secondary)' }}>
               <span>Shipping</span>
               <span style={{ color: '#008080', fontWeight: '800' }}>FREE</span>
             </div>
+            {pointsDiscount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '14px', color: '#008080', fontWeight: '800' }}>
+                <span>Points Discount</span>
+                <span>-{formatPrice(pointsDiscount)}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '14px', color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
               <span>Taxes (5%)</span>
               <span>{formatPrice(cartTotal * 0.05)}</span>

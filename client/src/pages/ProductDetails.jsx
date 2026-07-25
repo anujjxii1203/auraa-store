@@ -171,6 +171,11 @@ const ProductDetails = () => {
               <span style={{ fontSize: '16px', fontWeight: '800', color: '#008080' }}>30% OFF</span>
             </div>
             <div className="pdp-tax-info">Inclusive of all taxes</div>
+            {product.stock !== undefined && product.stock <= 5 && product.stock > 0 && (
+              <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', background: '#fff3cd', color: '#856404', border: '1px solid #ffeeba', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: '800', gap: '8px' }}>
+                <span>🔥 Only {product.stock} left in stock - order soon!</span>
+              </div>
+            )}
             <div style={{ marginTop: '12px', display: 'inline-flex', alignItems: 'center', background: 'rgba(225, 27, 35, 0.1)', color: '#e11b23', padding: '6px 12px', borderRadius: '4px', fontSize: '12px', fontWeight: '800' }}>
               <Star size={14} fill="#e11b23" style={{ marginRight: '6px' }} />
               EARN {Math.floor(product.price * 0.1)} AURA POINTS WITH THIS PURCHASE

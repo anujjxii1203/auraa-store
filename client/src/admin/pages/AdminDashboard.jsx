@@ -4,7 +4,7 @@ import api from '../../api/client';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
-import { DollarSign, ShoppingBag, Users, Activity } from 'lucide-react';
+import { DollarSign, ShoppingBag, Users, Activity, Download, AlertTriangle } from 'lucide-react';
 import '../assets/AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -33,13 +33,50 @@ const AdminDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const handleExportCSV = async () => {
+    try {
+      const response = await api.get('/admin/reports/sales-csv', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `sales_report_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Failed to export CSV', err);
+      alert('Failed to export sales report');
+    }
+  };
+
   if (loading) return <div className="admin-spinner"></div>;
 
   return (
     <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1>Dashboard Overview</h1>
-        <p>Welcome back, {admin?.role}</p>
+      <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1>Dashboard Overview</h1>
+          <p>Welcome back, {admin?.role}</p>
+        </div>
+        <button 
+          onClick={handleExportCSV} 
+          className="admin-btn"
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            padding: '10px 18px', 
+            background: '#e11b23', 
+            color: '#fff', 
+            border: 'none', 
+            borderRadius: '8px', 
+            cursor: 'pointer', 
+            fontWeight: '800',
+            fontSize: '13px'
+          }}
+        >
+          <Download size={16} /> EXPORT SALES CSV
+        </button>
       </div>
 
       <div className="stats-grid">
@@ -112,6 +149,40 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Low Stock Alerts Section */}
+      {data?.lowStockProducts && data.lowStockProducts.length > 0 && (
+        <div className="glass-panel" style={{ marginTop: '30px', padding: '25px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+            <AlertTriangle color="#ffc107" size={22} />
+            <h2 style={{ margin: 0, fontSize: '18px', color: '#ffc107' }}>Low Stock Inventory Alerts ({data.lowStockProducts.length})</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '15px' }}>
+            {data.lowStockProducts.map((prod) => (
+              <div 
+                key={prod.id} 
+                style={{ 
+                  background: 'rgba(255, 193, 7, 0.08)', 
+                  border: '1px solid rgba(255, 193, 7, 0.3)', 
+                  padding: '15px', 
+                  borderRadius: '8px',
+                  display: 'flex',
+                  justify: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <div>
+                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#fff' }}>{prod.name}</h4>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#888' }}>{prod.category}</p>
+                </div>
+                <span style={{ background: '#ffc107', color: '#000', padding: '4px 10px', borderRadius: '4px', fontWeight: '900', fontSize: '12px' }}>
+                  {prod.stock} left
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
