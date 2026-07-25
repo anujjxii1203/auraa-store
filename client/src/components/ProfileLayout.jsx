@@ -26,10 +26,9 @@ const ProfileLayout = () => {
     <div className="container" style={{ padding: '20px' }}>
       <PageTitle title="My Account" />
       <BackButton />
-      <div className="profile-wrapper" style={{ marginTop: '20px', display: path === '/profile' ? 'block' : 'flex' }}>
+      <div className="profile-wrapper" style={{ marginTop: '20px' }}>
         
         {/* Sidebar */}
-        {path !== '/profile' && (
         <div className="profile-sidebar" style={{ background: 'var(--ss-light-grey)', padding: '20px', borderRadius: '12px', height: 'fit-content' }}>
           <div className="profile-sidebar-header" style={{ textAlign: 'center', marginBottom: '30px' }}>
             <div className="avatar" style={{ width: '80px', height: '80px', background: '#008080', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '900', margin: '0 auto 15px' }}>
@@ -76,7 +75,6 @@ const ProfileLayout = () => {
             </div>
           </nav>
         </div>
-        )}
 
         {/* Main Content Area */}
         <div style={{ width: '100%', minWidth: 0 }}>
