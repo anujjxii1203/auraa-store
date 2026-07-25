@@ -23,7 +23,7 @@ const ProfileLayout = () => {
   };
 
   return (
-    <div className="container" style={{ padding: '1px' }}>
+    <div className="container" style={{ padding: '20px' }}>
       <PageTitle title="My Account" />
       <BackButton />
       <div className="profile-wrapper" style={{ marginTop: '20px' }}>
