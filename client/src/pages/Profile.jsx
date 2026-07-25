@@ -37,7 +37,6 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [activeTab, setActiveTab] = useState('orders');
-  const [visibleCount, setVisibleCount] = useState(4);
 
   useEffect(() => {
     if (!user) {
@@ -112,33 +111,33 @@ const Profile = () => {
                   <Link to="/" className="btn-red" style={{ padding: '12px 25px', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', display: 'inline-block' }}>START SHOPPING</Link>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {orders.slice(0, visibleCount).map((order) => (
-                    <div key={order.id} style={{ border: '1.5px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-primary)' }}>
+                <div style={{ width: '100%', maxHeight: '500px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', paddingRight: '8px' }}>
+                  {orders.map((order) => (
+                    <div key={order.id} style={{ border: '1.5px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-primary)', flexShrink: 0 }}>
                       <div 
                         className="order-header" 
                         onClick={() => navigate(`/order/${order.reference || order.id}`)}
                         style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', transition: '0.2s' }}
                       >
-                        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                          <div style={{ display: 'flex' }}>
+                        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', minWidth: 0 }}>
+                          <div style={{ display: 'flex', flexShrink: 0 }}>
                             {order.items.slice(0, 3).map((item, idx) => (
                               <img key={idx} src={item.image || FALLBACK_IMAGE} alt={item.name} onError={(e) => e.currentTarget.src = FALLBACK_IMAGE} style={{ width: '50px', height: '65px', objectFit: 'cover', borderRadius: '6px', marginLeft: idx > 0 ? '-25px' : '0', border: '2px solid var(--bg-primary)', zIndex: 10 - idx }} />
                             ))}
                           </div>
-                          <div>
-                            <p style={{ fontWeight: '900', fontSize: '14px', color: 'var(--text-primary)' }}>ORDER #{order.reference || order.id}</p>
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ fontWeight: '900', fontSize: '14px', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>ORDER #{order.reference || order.id}</p>
                             <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{order.date}</p>
                           </div>
                         </div>
-                        <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                        <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                           <div>
                             <p style={{ fontWeight: '900', fontSize: '15px', color: 'var(--text-primary)' }}>{formatPrice(order.total)}</p>
                             <p style={{ fontSize: '11px', color: order.status === 'delivered' ? 'var(--yaperz-green)' : '#e11b23', fontWeight: '800' }}>
                               {order.status === 'delivered' ? `DELIVERED ON ${order.date}` : order.status.toUpperCase()}
                             </p>
                           </div>
-                          <button style={{ padding: '8px 16px', background: 'var(--text-primary)', color: 'var(--bg-primary)', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}>
+                          <button style={{ padding: '8px 14px', background: 'var(--text-primary)', color: 'var(--bg-primary)', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '800', cursor: 'pointer', flexShrink: 0 }}>
                             VIEW DETAILS
                           </button>
                         </div>
@@ -148,7 +147,7 @@ const Profile = () => {
                         <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)' }}>RATE &amp; REVIEW</span>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <svg key={star} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer', color: 'var(--text-secondary)' }} onClick={() => navigate(`/order/${order.reference || order.id}`)}>  
+                            <svg key={star} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer', color: 'var(--text-secondary)' }} onClick={() => navigate(`/order/${order.reference || order.id}`)}>
                               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                             </svg>
                           ))}
@@ -156,15 +155,6 @@ const Profile = () => {
                       </div>
                     </div>
                   ))}
-
-                  {orders.length > visibleCount && (
-                    <button
-                      onClick={() => setVisibleCount(v => v + 4)}
-                      style={{ width: '100%', padding: '12px', background: 'transparent', border: '1.5px solid var(--border-color)', borderRadius: '10px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', color: 'var(--text-primary)', marginTop: '5px' }}
-                    >
-                      SHOW MORE ORDERS ({orders.length - visibleCount} remaining)
-                    </button>
-                  )}
                 </div>
               )}
             </>
