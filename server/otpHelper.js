@@ -8,8 +8,6 @@ function generateOtp() {
 }
 
 async function sendOtpEmail(toEmail, otp) {
-  console.log(`✅ OTP for ${toEmail}: ${otp}`);
-  
   try {
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',

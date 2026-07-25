@@ -274,7 +274,8 @@ console.log("Database module loaded.");
 const app = express();
 app.set('trust proxy', 1); // Required for rate limiting on Render
 const PORT = Number.parseInt(process.env.PORT, 10) || 5055;
-const JWT_SECRET = process.env.JWT_SECRET || 'development_secret_change_me';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) { console.error('FATAL: JWT_SECRET not set'); process.exit(1); }
 const TOKEN_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173,http://127.0.0.1:5173')
   .split(',')
@@ -287,7 +288,11 @@ console.log('Environment loaded successfully');
 app.use(helmet());
 app.use(cors({
   origin(origin, callback) {
-    callback(null, true);
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS blocked: ' + origin));
+    }
   },
   credentials: true,
 }));
@@ -1685,6 +1690,18 @@ app.post('/api/returns', authenticateUser, asyncHandler(async (req, res) => {
   const { orderId, productId, productName, reason } = req.body;
   const userId = req.auth.id;
 
+  // Ownership check: order must belong to the requesting user
+  const order = await get('SELECT * FROM payments WHERE id = ? AND user_id = ?', [orderId, userId]);
+  if (!order) {
+    return res.status(403).json({ message: 'Order not found or does not belong to you.' });
+  }
+
+  // Prevent duplicate return requests for the same product in an order
+  const existing = await get('SELECT id FROM returns WHERE order_id = ? AND product_id = ?', [orderId, productId]);
+  if (existing) {
+    return res.status(409).json({ message: 'A return request already exists for this item.' });
+  }
+
   await run('INSERT INTO returns (order_id, product_id, user_id, reason, status) VALUES (?, ?, ?, ?, ?)', [orderId, productId, userId, reason, 'pending']);
 
   await sendReturnEmail(req.auth.email, orderId, productName, reason);
@@ -1696,7 +1713,29 @@ app.post('/api/returns', authenticateUser, asyncHandler(async (req, res) => {
 app.post('/api/reviews', authenticateUser, asyncHandler(async (req, res) => {
   const { productId, product_id, rating, comment } = req.body;
   const username = req.auth.username || 'Anonymous';
-  const finalId = productId || product_id;
+  const userId = req.auth.id;
+  const finalId = parseInt(productId || product_id);
+
+  // Verified purchase check: user must have a paid order containing this product
+  const userOrders = await all(
+    "SELECT metadata FROM payments WHERE user_id = ? AND (status = 'paid' OR status = 'completed' OR status_track IN ('processing','shipped','delivered'))",
+    [userId]
+  );
+
+  const hasPurchased = userOrders.some(order => {
+    try {
+      const meta = typeof order.metadata === 'string' ? JSON.parse(order.metadata) : order.metadata;
+      const items = Array.isArray(meta) ? meta : (meta?.items || []);
+      return items.some(item => parseInt(item.id || item.product_id) === finalId);
+    } catch {
+      return false;
+    }
+  });
+
+  if (!hasPurchased) {
+    res.status(403).json({ message: 'You can only review products you have purchased.' });
+    return;
+  }
 
   await run('INSERT INTO reviews (product_id, username, rating, comment) VALUES (?, ?, ?, ?)', [finalId, username, rating, comment]);
 
