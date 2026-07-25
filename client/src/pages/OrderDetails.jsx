@@ -244,21 +244,24 @@ const OrderDetails = () => {
             <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: 'var(--ss-red)' }}>
               {formatPrice(order.total)}
             </h2>
-            <div style={{ display: 'flex', gap: '8px', marginTop: '5px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
               <button
                 onClick={generateInvoice}
                 style={{
-                  padding: '6px 14px',
+                  padding: '6px 12px',
                   borderRadius: '6px',
                   background: '#008080',
                   color: '#fff',
                   border: 'none',
                   fontWeight: '800',
-                  fontSize: '12px',
-                  cursor: 'pointer'
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px'
                 }}
               >
-                DOWNLOAD INVOICE (PDF)
+                <Download size={13} /> INVOICE (PDF)
               </button>
               {order.status === 'processing' && (
                 <button
@@ -274,13 +277,13 @@ const OrderDetails = () => {
                     }
                   }}
                   style={{
-                    padding: '6px 14px',
+                    padding: '6px 12px',
                     borderRadius: '6px',
                     background: 'transparent',
                     border: '1px solid #e11b23',
                     color: '#e11b23',
                     fontWeight: '800',
-                    fontSize: '12px',
+                    fontSize: '11px',
                     cursor: 'pointer'
                   }}
                 >
@@ -474,7 +477,7 @@ const OrderDetails = () => {
                         onError={(e) => { e.target.src = FALLBACK_IMAGE }}
                       />
                     </div>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
                       <div>
                         <h4 style={{ margin: '0 0 5px 0', fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>{item.name}</h4>
                         <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>
@@ -482,11 +485,11 @@ const OrderDetails = () => {
                         </p>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '15px' }}>
-                        <p style={{ margin: '13px', fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)' }}>{formatPrice(item.price)}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '15px', flexWrap: 'wrap', gap: '10px' }}>
+                        <p style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)' }}>{formatPrice(item.price)}</p>
 
                         {!isCancelled && (
-                          <div style={{ display: 'flex', gap: '12px' }}>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                             <button
                               className="order-action-btn review"
                               onClick={() => {
