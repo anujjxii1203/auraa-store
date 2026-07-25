@@ -245,13 +245,16 @@ const OrderDetails = () => {
               <h3 style={{ fontSize: '18px', fontWeight: '900', marginBottom: '20px', color: 'var(--text-primary)' }}>ITEMS IN THIS ORDER</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {order.items.map((item, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: '20px', padding: '20px', background: 'var(--bg-secondary)', borderRadius: '12px' }}>
-                    <img 
-                      src={item.image || FALLBACK_IMAGE} 
-                      alt={item.name} 
-                      style={{ width: '80px', height: '100px', objectFit: 'cover', borderRadius: '8px', background: '#e0e0e0' }}
-                      onError={(e) => { e.target.src = FALLBACK_IMAGE }}
-                    />
+                  <div key={idx} className="order-item-card">
+                    <div className="order-item-image-wrapper">
+                      <img 
+                        src={item.image || FALLBACK_IMAGE} 
+                        alt={item.name} 
+                        className="order-item-image"
+                        style={{ background: '#e0e0e0' }}
+                        onError={(e) => { e.target.src = FALLBACK_IMAGE }}
+                      />
+                    </div>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       <div>
                         <h4 style={{ margin: '0 0 5px 0', fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>{item.name}</h4>
@@ -265,17 +268,17 @@ const OrderDetails = () => {
                         
                         <div style={{ display: 'flex', gap: '10px' }}>
                           <button 
+                            className="order-action-btn review"
                             onClick={() => {
                               setReviewProduct(item);
                               setReviewModalOpen(true);
-                            }}
-                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer', transition: '0.2s' }}>
-                            <Star size={12} /> REVIEW
+                            }}>
+                            <Star size={14} fill="currentColor" /> REVIEW
                           </button>
                           <button 
-                            onClick={() => handleReturn(item)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer', transition: '0.2s', color: 'var(--ss-red)' }}>
-                            <RotateCcw size={12} /> RETURN
+                            className="order-action-btn return"
+                            onClick={() => handleReturn(item)}>
+                            <RotateCcw size={14} /> RETURN
                           </button>
                         </div>
                       </div>
