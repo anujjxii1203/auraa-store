@@ -12,6 +12,44 @@ const OrderDetails = () => {
   const { showToast } = useToast();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // States for Review Modal
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewProduct, setReviewProduct] = useState(null);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+
+  const handleReturn = async (item) => {
+    const reason = prompt("Please enter a reason for returning this item:");
+    if (!reason) return;
+    try {
+      await api.post('/returns', { 
+        orderId: order.id, 
+        productId: item.id || item.product_id, 
+        productName: item.name, 
+        reason 
+      });
+      showToast("Return request submitted! Our team will contact you shortly.", "success");
+    } catch(err) {
+      showToast("Failed to submit return request", "error");
+    }
+  };
+
+  const handleReviewSubmit = async () => {
+    try {
+      await api.post('/reviews', { 
+        productId: reviewProduct.id || reviewProduct.product_id, 
+        rating, 
+        comment 
+      });
+      showToast("Review submitted successfully!", "success");
+      setReviewModalOpen(false);
+      setComment("");
+      setRating(5);
+    } catch(err) {
+      showToast("Failed to submit review", "error");
+    }
+  };
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -183,18 +221,14 @@ const OrderDetails = () => {
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <button 
                           onClick={() => {
-                            const productId = item.id || item.product_id;
-                            if (productId) {
-                              navigate(`/product/${productId}`);
-                            } else {
-                              showToast("Product page not found", "error");
-                            }
+                            setReviewProduct(item);
+                            setReviewModalOpen(true);
                           }}
                           style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', transition: '0.2s' }}>
                           <Star size={14} /> REVIEW
                         </button>
                         <button 
-                          onClick={() => showToast("Return request submitted! Our team will contact you shortly.", "success")}
+                          onClick={() => handleReturn(item)}
                           style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', transition: '0.2s', color: 'var(--ss-red)' }}>
                           <RotateCcw size={14} /> RETURN
                         </button>
@@ -246,6 +280,52 @@ const OrderDetails = () => {
           </div>
         </div>
       </div>
+
+      {reviewModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'var(--bg-primary)', padding: '30px', borderRadius: '12px', width: '90%', maxWidth: '500px' }}>
+            <h2 style={{ marginTop: 0, marginBottom: '20px', fontSize: '20px', fontWeight: '800' }}>Review {reviewProduct?.name}</h2>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Rating (1-5)</label>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {[1, 2, 3, 4, 5].map(num => (
+                  <Star 
+                    key={num} 
+                    size={24} 
+                    fill={num <= rating ? 'var(--ss-red)' : 'none'} 
+                    color={num <= rating ? 'var(--ss-red)' : '#ccc'}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setRating(num)}
+                  />
+                ))}
+              </div>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Comments</label>
+              <textarea 
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="What did you think about this product?"
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border-color)', minHeight: '100px', resize: 'vertical', fontFamily: 'inherit' }}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
+              <button 
+                onClick={() => setReviewModalOpen(false)}
+                style={{ padding: '10px 20px', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '700' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleReviewSubmit}
+                style={{ padding: '10px 20px', background: 'var(--ss-red)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}
+              >
+                Submit Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

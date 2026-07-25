@@ -42,6 +42,15 @@ const AdminStats = () => {
     }
   };
 
+  const updatePaymentStatus = async (id, status) => {
+    try {
+      await api.patch(`/admin/orders/${id}/payment`, { status });
+      fetchStats();
+    } catch (err) {
+      alert('Failed to update payment status');
+    }
+  };
+
   if (!isAuthorized) {
     return (
       <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f7f9', fontFamily: 'system-ui' }}>
@@ -185,6 +194,7 @@ const AdminStats = () => {
         <nav style={{ flex: 1 }}>
           <NavItem id="dashboard" icon={LayoutDashboard} label="DASHBOARD" />
           <NavItem id="orders" icon={CreditCard} label="ORDERS" />
+          <NavItem id="returns" icon={RefreshCw} label="RETURNS" />
           <NavItem id="products" icon={Package} label="PRODUCTS" />
           <NavItem id="users" icon={Users} label="CUSTOMERS" />
           <NavItem id="coupons" icon={Ticket} label="COUPONS" />
@@ -265,9 +275,20 @@ const AdminStats = () => {
                     <td style={{ padding: '20px', color: '#666' }}>{new Date(py.created_at).toLocaleDateString()}</td>
                     <td style={{ padding: '20px', fontWeight: '900', color: '#008080' }}>{formatPrice(py.amount)}</td>
                     <td style={{ padding: '20px' }}>
-                      <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '900', background: py.status === 'paid' ? '#e6f4f1' : '#fff1f1', color: py.status === 'paid' ? '#008080' : '#e11b23' }}>
-                        {py.status.toUpperCase()}
-                      </span>
+                      {py.status === 'pending' ? (
+                        <select 
+                          value={py.status} 
+                          onChange={(e) => updatePaymentStatus(py.id, e.target.value)}
+                          style={{ padding: '6px 12px', borderRadius: '8px', border: '1.5px solid #eee', fontSize: '11px', fontWeight: '900', background: '#fff1f1', color: '#e11b23', cursor: 'pointer', outline: 'none' }}
+                        >
+                          <option value="pending">PENDING</option>
+                          <option value="paid">PAID</option>
+                        </select>
+                      ) : (
+                        <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '900', background: '#e6f4f1', color: '#008080' }}>
+                          PAID
+                        </span>
+                      )}
                     </td>
                     <td style={{ padding: '20px' }}>
                       <select 
@@ -282,6 +303,42 @@ const AdminStats = () => {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* --- RETURNS TAB --- */}
+        {activeTab === 'returns' && (
+          <div style={{ background: 'white', borderRadius: '16px', border: '1.5px solid #eee', overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead style={{ background: '#f8f9fa' }}>
+                <tr style={{ textAlign: 'left' }}>
+                  <th style={{ padding: '20px', color: '#888', fontWeight: '800' }}>RETURN ID</th>
+                  <th style={{ padding: '20px', color: '#888', fontWeight: '800' }}>ORDER ID</th>
+                  <th style={{ padding: '20px', color: '#888', fontWeight: '800' }}>REASON</th>
+                  <th style={{ padding: '20px', color: '#888', fontWeight: '800' }}>STATUS</th>
+                  <th style={{ padding: '20px', color: '#888', fontWeight: '800' }}>DATE</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.returns && data.returns.length > 0 ? data.returns.map(ret => (
+                  <tr key={ret.id} style={{ borderTop: '1px solid #eee' }}>
+                    <td style={{ padding: '20px', fontWeight: '800' }}>#{ret.id}</td>
+                    <td style={{ padding: '20px', color: '#666' }}>{ret.order_id}</td>
+                    <td style={{ padding: '20px', color: '#111' }}>{ret.reason}</td>
+                    <td style={{ padding: '20px' }}>
+                      <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '900', background: ret.status === 'pending' ? '#fff1f1' : '#e6f4f1', color: ret.status === 'pending' ? '#e11b23' : '#008080' }}>
+                        {ret.status.toUpperCase()}
+                      </span>
+                    </td>
+                    <td style={{ padding: '20px', color: '#666' }}>{new Date(ret.created_at).toLocaleDateString()}</td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: '#888' }}>No returns requested yet.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

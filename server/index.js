@@ -23,6 +23,7 @@ const { generateTokens, setAuthCookies, clearAuthCookies } = require('./utils/to
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { randomUUID, createHmac } = require('crypto');
+const { sendReturnEmail } = require('./utils/emailHelper');
 const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID);
 // Razorpay integration restored
@@ -1118,12 +1119,14 @@ app.get('/api/admin/stats', asyncHandler(async (req, res) => {
   const products = await all('SELECT id, name, price, category, stock FROM products');
   const payments = await all('SELECT id, amount, status, method, reference, created_at, status_track FROM payments ORDER BY created_at DESC');
   const coupons = await all('SELECT * FROM coupons');
+  const returns = await all('SELECT * FROM returns ORDER BY created_at DESC');
   
   res.json({
     users,
     products,
     payments,
     coupons,
+    returns,
     db_status: 'Connected to Supabase PostgreSQL'
   });
 }));
@@ -1688,6 +1691,50 @@ app.post('/api/auth/google', asyncHandler(async (req, res) => {
     token: signToken(user),
     user: publicUser(user),
   });
+}));
+
+// --- RETURNS ---
+app.post('/api/returns', authenticateUser, asyncHandler(async (req, res) => {
+  const { orderId, productId, productName, reason } = req.body;
+  const userId = req.user.id;
+  
+  await run('INSERT INTO returns (order_id, product_id, user_id, reason, status) VALUES (?, ?, ?, ?, ?)', [orderId, productId, userId, reason, 'pending']);
+  
+  await sendReturnEmail(req.user.email, orderId, productName, reason);
+  
+  res.json({ message: 'Return request submitted successfully' });
+}));
+
+// --- REVIEWS ---
+app.post('/api/reviews', authenticateUser, asyncHandler(async (req, res) => {
+  const { productId, product_id, rating, comment } = req.body;
+  const username = req.user.username || 'Anonymous';
+  const finalId = productId || product_id;
+  
+  await run('INSERT INTO reviews (product_id, username, rating, comment) VALUES (?, ?, ?, ?)', [finalId, username, rating, comment]);
+  
+  res.json({ message: 'Review added successfully' });
+}));
+
+app.get('/api/reviews/:productId', asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+  const reviews = await all('SELECT * FROM reviews WHERE product_id = ? ORDER BY created_at DESC', [productId]);
+  res.json(reviews);
+}));
+
+// --- ADMIN PATCH PAYMENT ---
+app.patch('/api/admin/orders/:id/payment', authenticateAdmin, requirePermission('manage_orders'), asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  
+  // if setting to 'paid', also update status_track to 'processing'
+  if (status === 'paid') {
+    await run('UPDATE payments SET status = ?, status_track = ? WHERE id = ?', [status, 'processing', id]);
+  } else {
+    await run('UPDATE payments SET status = ? WHERE id = ?', [status, id]);
+  }
+  
+  res.json({ message: 'Order payment status updated successfully' });
 }));
 
 // Fallback for API routes

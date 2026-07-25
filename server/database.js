@@ -597,6 +597,20 @@ async function createRolesTable() {
   }
 }
 
+async function createReturnsTable() {
+  await run(`
+    CREATE TABLE IF NOT EXISTS returns (
+      id SERIAL PRIMARY KEY,
+      order_id TEXT NOT NULL,
+      product_id INTEGER,
+      user_id INTEGER NOT NULL,
+      reason TEXT,
+      status TEXT DEFAULT 'pending',
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 let initPromise;
 
 async function initializeDatabase() {
@@ -617,6 +631,7 @@ async function initializeDatabase() {
         await createAuditLogsTable();
         await createOtpTable();
         await createIdempotencyKeysTable();
+        await createReturnsTable();
         await createAdminUsersTable();
         await createRolesTable();
         await client.query('COMMIT');
@@ -650,6 +665,7 @@ async function initializeDatabase() {
       await createAuditLogsTable();
       await createOtpTable();
       await createIdempotencyKeysTable();
+      await createReturnsTable();
       await createAdminUsersTable();
       await createRolesTable();
       db.exec('COMMIT');
