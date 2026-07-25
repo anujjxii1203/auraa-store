@@ -590,22 +590,6 @@ app.delete('/api/products/:id', requireAuth, asyncHandler(async (req, res) => {
   res.json({ message: 'Product deleted successfully.' });
 }));
 
-app.post('/api/reviews', requireAuth, asyncHandler(async (req, res) => {
-  const { product_id, rating, comment } = req.body;
-  const username = req.auth.username;
-
-  if (!product_id || !rating || !comment) {
-    res.status(400).json({ message: 'All fields are required.' });
-    return;
-  }
-
-  await run(
-    'INSERT INTO reviews (product_id, username, rating, comment) VALUES (?, ?, ?, ?)',
-    [product_id, username, rating, comment]
-  );
-
-  res.status(201).json({ message: 'Review added successfully' });
-}));
 
 app.post('/api/register', registerLimiter, asyncHandler(async (req, res) => {
   const username = String(req.body.name || req.body.username || '').trim();
