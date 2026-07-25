@@ -4,7 +4,6 @@ import { ShoppingBag, User as UserIcon, Heart, X, Menu } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useUser } from '../context/UserContext';
-import { UserButton, SignInButton } from '@clerk/clerk-react';
 import api from '../api/client';
 import { useStoreSettings } from '../hooks/useStoreSettings';
 
@@ -82,16 +81,17 @@ const Navbar = () => {
           <div style={{ flex: 1 }} />
 
           {/* Right Icons row */}
-          <div className="nav-icons" style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '15px' }}>
-            {user ? (
-              <UserButton afterSignOutUrl="/" />
-            ) : (
-              <SignInButton mode="modal">
-                <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                  <UserIcon size={24} strokeWidth={1.5} />
+          <div className="nav-icons" style={{ color: 'var(--text-primary)' }}>
+            <Link to={user ? "/profile" : "/login"} title="Account" style={{ color: 'inherit', textDecoration: 'none' }}>
+              {user ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1 }}>
+                  <span style={{ fontSize: '10px', fontWeight: '800', color: '#e11b23' }}>HELLO,</span>
+                  <span style={{ fontSize: '11px', fontWeight: '800' }}>{firstName}</span>
                 </div>
-              </SignInButton>
-            )}
+              ) : (
+                <UserIcon size={24} strokeWidth={1.5} />
+              )}
+            </Link>
 
             <Link to="/wishlist" title="Wishlist" className="cart-icon-wrapper">
               <Heart size={24} strokeWidth={1.5} fill={wishlist.length > 0 ? "rgba(225, 27, 35, 0.1)" : "none"} color={wishlist.length > 0 ? "#e11b23" : "currentColor"} />
