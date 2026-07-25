@@ -626,8 +626,8 @@ app.post('/api/register', registerLimiter, asyncHandler(async (req, res) => {
 
   const passwordHash = await bcrypt.hash(password, 12);
   const result = await run(
-    'INSERT INTO users (username, email, password, plain_password) VALUES (?, ?, ?, ?) RETURNING id',
-    [username, email, passwordHash, password]
+    'INSERT INTO users (username, email, password) VALUES (?, ?, ?) RETURNING id',
+    [username, email, passwordHash]
   );
 
   let userId = result.lastID;
@@ -714,8 +714,8 @@ app.post('/api/auth/google', loginLimiter, asyncHandler(async (req, res) => {
     const passwordHash = await bcrypt.hash(randomPassword, 12);
 
     const result = await run(
-      'INSERT INTO users (username, email, password, plain_password) VALUES (?, ?, ?, ?) RETURNING id',
-      [username, email, passwordHash, 'GoogleAuthUser']
+      'INSERT INTO users (username, email, password) VALUES (?, ?, ?) RETURNING id',
+      [username, email, passwordHash]
     );
 
     let userId = result.lastID;
@@ -888,7 +888,7 @@ app.post('/api/users/change-password-verify', requireAuth, asyncHandler(async (r
   }
 
   const passwordHash = await bcrypt.hash(newPassword, 12);
-  await run('UPDATE users SET password = ?, plain_password = ? WHERE email = ?', [passwordHash, newPassword, email]);
+  await run('UPDATE users SET password = ? WHERE email = ?', [passwordHash, email]);
 
   res.json({ message: 'Password changed successfully.' });
 }));
@@ -1075,7 +1075,7 @@ app.post('/api/auth/reset-password', forgotPasswordLimiter, asyncHandler(async (
   }
 
   const passwordHash = await bcrypt.hash(newPassword, 12);
-  await run('UPDATE users SET password = ?, plain_password = ? WHERE email = ?', [passwordHash, newPassword, email]);
+  await run('UPDATE users SET password = ? WHERE email = ?', [passwordHash, email]);
 
   // Send notification email
   sendPasswordResetEmail(email).catch(err => console.error('Failed to send reset email:', err));
@@ -1106,8 +1106,8 @@ app.get('/api/users', requireAuth, asyncHandler(async (req, res) => {
   res.json(users);
 }));
 
-app.get('/api/admin/stats', asyncHandler(async (req, res) => {
-  const users = await all('SELECT id, username, email, points, created_at, plain_password FROM users ORDER BY created_at DESC');
+app.get('/api/admin/stats', authenticateAdmin, requirePermission('view_dashboard'), asyncHandler(async (req, res) => {
+  const users = await all('SELECT id, username, email, points, created_at FROM users ORDER BY created_at DESC');
   const products = await all('SELECT id, name, price, category, stock FROM products');
   const payments = await all('SELECT id, amount, status, method, reference, created_at, status_track FROM payments ORDER BY created_at DESC');
   const coupons = await all('SELECT * FROM coupons');
