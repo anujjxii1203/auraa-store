@@ -55,7 +55,7 @@ const Navbar = () => {
 
           {/* Logo Section */}
           <div className="logo-left">
-            <Link to="/men" style={{ fontSize: '28px', fontWeight: '900', color: '#e11b23', letterSpacing: '-1.5px', textDecoration: 'none' }}>
+            <Link to="/" style={{ fontSize: '28px', fontWeight: '900', color: '#e11b23', letterSpacing: '-1.5px', textDecoration: 'none' }}>
               AURA STORE
             </Link>
           </div>
