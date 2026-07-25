@@ -46,7 +46,7 @@ const ProfileLayout = () => {
                 <div className="avatar" style={{ width: '50px', height: '50px', background: '#008080', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: '900', flexShrink: 0 }}>
                   {(user?.username || 'A').charAt(0).toUpperCase()}
                 </div>
-                <h2 style={{ fontSize: '18px', fontWeight: '950', color: 'var(--text-primary)', margin: 0, wordBreak: 'break-word' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: '950', color: 'var(--text-primary)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {(user?.username || 'Customer').toUpperCase()}
                 </h2>
               </div>
