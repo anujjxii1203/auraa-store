@@ -28,6 +28,11 @@ const ProfileLayout = () => {
       <BackButton />
       <div className="profile-wrapper" style={{ marginTop: '20px' }}>
         
+        {/* Main Content Area */}
+        <div style={{ width: '100%', minWidth: 0 }}>
+          <Outlet />
+        </div>
+
         {/* Sidebar */}
         <div className="profile-sidebar" style={{ background: 'var(--ss-light-grey)', padding: '20px', borderRadius: '12px', height: 'fit-content' }}>
           <div className="profile-sidebar-header" style={{ textAlign: 'center', marginBottom: '30px' }}>
@@ -74,11 +79,6 @@ const ProfileLayout = () => {
               <LogOut size={18} /> LOGOUT ALL DEVICES
             </div>
           </nav>
-        </div>
-
-        {/* Main Content Area */}
-        <div style={{ width: '100%', minWidth: 0 }}>
-          <Outlet />
         </div>
       </div>
     </div>
