@@ -245,6 +245,21 @@ const OrderDetails = () => {
               {formatPrice(order.total)}
             </h2>
             <div style={{ display: 'flex', gap: '8px', marginTop: '5px' }}>
+              <button
+                onClick={generateInvoice}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  background: '#008080',
+                  color: '#fff',
+                  border: 'none',
+                  fontWeight: '800',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                DOWNLOAD INVOICE (PDF)
+              </button>
               {order.status === 'processing' && (
                 <button
                   onClick={async () => {
