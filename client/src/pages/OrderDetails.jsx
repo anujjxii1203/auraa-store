@@ -19,6 +19,14 @@ const OrderDetails = () => {
         const foundOrder = res.data.find(o => o.id.toString() === id || o.reference === id);
         
         if (foundOrder) {
+          let parsedMeta = {};
+          try {
+            parsedMeta = typeof foundOrder.metadata === 'string' ? JSON.parse(foundOrder.metadata) : (foundOrder.metadata || {});
+          } catch(e) {
+            console.error("Failed to parse metadata", e);
+          }
+          const items = Array.isArray(parsedMeta) ? parsedMeta : (parsedMeta.items || []);
+
           const formatted = {
             id: foundOrder.id,
             reference: foundOrder.reference,
@@ -27,7 +35,7 @@ const OrderDetails = () => {
             status: (foundOrder.status_track || 'processing').toLowerCase(),
             payment_status: foundOrder.status,
             razorpay_order_id: foundOrder.razorpay_order_id,
-            items: JSON.parse(foundOrder.metadata).items || []
+            items: items
           };
           setOrder(formatted);
         }
@@ -163,7 +171,7 @@ const OrderDetails = () => {
                     <div>
                       <h4 style={{ margin: '0 0 5px 0', fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)' }}>{item.name}</h4>
                       <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>
-                        Size: {item.size} | Color: {item.color} | Qty: {item.quantity}
+                        Size: {item.selectedSize || item.size} | Qty: {item.quantity || 1}
                       </p>
                     </div>
                     
@@ -202,27 +210,24 @@ const OrderDetails = () => {
                 <span style={{ fontWeight: '900', color: 'var(--ss-red)' }}>{formatPrice(order.total)}</span>
               </div>
               
-              <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px' }}>
-                <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#666', textTransform: 'uppercase', fontWeight: '700' }}>Payment Status</p>
-                <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: order.payment_status === 'paid' ? 'var(--teal)' : '#f39c12' }}>
-                  {order.payment_status === 'paid' ? 'SUCCESSFUL (PAID)' : 'PENDING'}
+              <div style={{ marginTop: '20px', padding: '15px', background: 'var(--bg-primary)', borderRadius: '8px' }}>
+                <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#666', fontWeight: '700' }}>PAYMENT STATUS</p>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: order.payment_status === 'paid' ? 'var(--teal)' : '#f39c12', textTransform: 'uppercase' }}>
+                  {order.payment_status}
                 </p>
-                {order.razorpay_order_id && (
-                  <>
-                    <p style={{ margin: '15px 0 5px 0', fontSize: '12px', color: '#666', textTransform: 'uppercase', fontWeight: '700' }}>Transaction ID</p>
-                    <p style={{ margin: 0, fontSize: '12px', fontFamily: 'monospace' }}>{order.razorpay_order_id}</p>
-                  </>
-                )}
               </div>
             </div>
 
-            <div style={{ background: 'var(--bg-secondary)', padding: '25px', borderRadius: '12px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '800', marginBottom: '20px', color: 'var(--text-primary)' }}>NEED HELP?</h3>
-              <p style={{ fontSize: '13px', color: '#666', lineHeight: '1.5', marginBottom: '15px' }}>
+            {/* Support */}
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', marginBottom: '15px', color: 'var(--text-primary)' }}>NEED HELP?</h3>
+              <p style={{ fontSize: '13px', color: '#666', marginBottom: '20px', lineHeight: '1.5' }}>
                 If you have any issues with your order, returns, or payment, our support team is available 24/7.
               </p>
-              <button style={{ width: '100%', padding: '12px', background: 'var(--text-primary)', color: 'var(--bg-primary)', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: '800', cursor: 'pointer' }}>
-                CONTACT SUPPORT
+              <button 
+                onClick={() => window.location.href = 'mailto:support@auraa.com'}
+                style={{ width: '100%', padding: '12px', background: 'var(--text-primary)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', transition: '0.2s', textTransform: 'uppercase' }}>
+                Contact Support
               </button>
             </div>
           </div>

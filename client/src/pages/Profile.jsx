@@ -69,15 +69,23 @@ const Profile = () => {
     try {
       const res = await api.get('/orders/me');
       // Format backend orders to match UI structure
-      const formatted = res.data.map(order => ({
-        id: order.id,
-        reference: order.reference,
-        date: new Date(order.created_at).toLocaleDateString(),
-        total: order.amount,
-        status: (order.status_track || 'processing').toLowerCase(),
-        payment_status: order.status,
-        items: JSON.parse(order.metadata).items || []
-      }));
+      const formatted = res.data.map(order => {
+        let parsedMeta = {};
+        try {
+          parsedMeta = typeof order.metadata === 'string' ? JSON.parse(order.metadata) : (order.metadata || {});
+        } catch(e) {}
+        const items = Array.isArray(parsedMeta) ? parsedMeta : (parsedMeta.items || []);
+
+        return {
+          id: order.id,
+          reference: order.reference,
+          date: new Date(order.created_at).toLocaleDateString(),
+          total: order.amount,
+          status: (order.status_track || 'processing').toLowerCase(),
+          payment_status: order.status,
+          items: items
+        };
+      });
       setOrders(formatted);
     } catch (err) {
       console.error('Failed to fetch orders');
