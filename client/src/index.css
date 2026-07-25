@@ -1470,7 +1470,7 @@ button:disabled {
 .mobile-menu {
   position: fixed;
   top: 0;
-  right: -300px;
+  left: -300px;
   width: 300px;
   height: 100%;
   background: white;
@@ -1479,10 +1479,11 @@ button:disabled {
   padding: 30px;
   display: flex;
   flex-direction: column;
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
 }
 
 .mobile-menu.active {
-  right: 0;
+  left: 0;
 }
 
 .cart-drawer {

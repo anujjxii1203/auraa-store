@@ -216,14 +216,14 @@ const Home = () => {
       {/* Trending Products */}
       <section style={{ padding: '60px 0 100px', background: 'var(--bg-secondary)' }}>
         <div className="container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px', gap: '15px' }}>
             <div>
-              <h2 style={{ fontSize: '2.5rem', fontWeight: '950', textTransform: 'uppercase', color: 'var(--text-primary)', margin: 0 }}>
+              <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: '950', textTransform: 'uppercase', color: 'var(--text-primary)', margin: 0, lineHeight: 1.1 }}>
                 Trending Now
               </h2>
               <div style={{ width: '60px', height: '4px', background: '#e11b23', marginTop: '15px' }}></div>
             </div>
-            <Link to="/drops" style={{ color: 'var(--text-secondary)', fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}
+            <Link to="/drops" style={{ color: 'var(--text-secondary)', fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap', flexShrink: 0, fontSize: '14px' }}
               onMouseOver={(e) => e.currentTarget.style.color = '#e11b23'}
               onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
             >
