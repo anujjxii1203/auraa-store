@@ -5,6 +5,8 @@ import { Package, Truck, CheckCircle, Home, ArrowLeft, Star, RotateCcw } from 'l
 import PageTitle from '../components/PageTitle';
 import { formatPrice, FALLBACK_IMAGE } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const OrderDetails = () => {
   const { id } = useParams();
@@ -150,6 +152,72 @@ const OrderDetails = () => {
 
   const currentStep = getStatusStep(order.status);
 
+  const generateInvoice = () => {
+    if (!order) return;
+    
+    const doc = new jsPDF();
+    
+    doc.setFontSize(22);
+    doc.setTextColor(225, 27, 35); // AURA red
+    doc.text('AURA STORE', 14, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Invoice generated on: ' + new Date().toLocaleDateString(), 14, 28);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Order Reference: #${order.reference || order.id}`, 14, 40);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Order Date: ${order.date}`, 14, 46);
+    doc.text(`Payment Method: ${order.method === 'cod' ? 'Cash On Delivery' : 'Online Payment'}`, 14, 52);
+    
+    const tableColumn = ["Item Name", "Size", "Qty", "Price", "Total"];
+    const tableRows = [];
+    
+    order.items.forEach(item => {
+      const itemData = [
+        item.name,
+        item.selectedSize || item.size || 'N/A',
+        item.quantity || 1,
+        `Rs. ${item.price}`,
+        `Rs. ${(item.price * (item.quantity || 1)).toFixed(2)}`
+      ];
+      tableRows.push(itemData);
+    });
+    
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 65,
+      theme: 'grid',
+      headStyles: { fillColor: [225, 27, 35] },
+    });
+    
+    const finalY = doc.lastAutoTable.finalY || 65;
+    
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Price Details', 14, finalY + 15);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    
+    const subtotal = order.items.reduce((acc, item) => acc + (item.price * (item.quantity || 1)), 0);
+    
+    doc.text(`Subtotal: Rs. ${subtotal.toFixed(2)}`, 14, finalY + 23);
+    doc.text(`Shipping: Free`, 14, finalY + 29);
+    doc.text(`GST / Tax (Included): Rs. ${(subtotal * 0.18).toFixed(2)}`, 14, finalY + 35);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(225, 27, 35);
+    doc.text(`Total Amount: Rs. ${order.total.toFixed(2)}`, 14, finalY + 45);
+    
+    doc.save(`AURA_Invoice_${order.reference || order.id}.pdf`);
+  };
+
   return (
     <div style={{ padding: '60px 20px', minHeight: '80vh', background: 'var(--bg-primary)' }}>
       <PageTitle title={`Order #${order.reference}`} />
@@ -246,6 +314,19 @@ const OrderDetails = () => {
                   <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>User • Contact on profile</p>
                 </div>
               </div>
+            </div>
+            
+            {/* Support */}
+            <div style={{ marginTop: '30px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', marginBottom: '15px', color: 'var(--text-primary)' }}>NEED HELP?</h3>
+              <p style={{ fontSize: '13px', color: '#666', marginBottom: '20px', lineHeight: '1.5' }}>
+                If you have any issues with your order, returns, or payment, our support team is available 24/7.
+              </p>
+              <button 
+                onClick={() => window.location.href = 'mailto:support@auraa.com'}
+                style={{ width: '100%', padding: '12px', background: 'var(--text-primary)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', transition: '0.2s', textTransform: 'uppercase' }}>
+                Contact Support
+              </button>
             </div>
           </div>
 
@@ -345,22 +426,10 @@ const OrderDetails = () => {
               </div>
               
               <button 
+                onClick={generateInvoice}
                 style={{ width: '100%', marginTop: '15px', padding: '12px', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1.5px solid var(--border-color)', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 Download Invoice
-              </button>
-            </div>
-
-            {/* Support */}
-            <div>
-              <h3 style={{ fontSize: '16px', fontWeight: '800', marginBottom: '15px', color: 'var(--text-primary)' }}>NEED HELP?</h3>
-              <p style={{ fontSize: '13px', color: '#666', marginBottom: '20px', lineHeight: '1.5' }}>
-                If you have any issues with your order, returns, or payment, our support team is available 24/7.
-              </p>
-              <button 
-                onClick={() => window.location.href = 'mailto:support@auraa.com'}
-                style={{ width: '100%', padding: '12px', background: 'var(--text-primary)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', transition: '0.2s', textTransform: 'uppercase' }}>
-                Contact Support
               </button>
             </div>
           </div>
