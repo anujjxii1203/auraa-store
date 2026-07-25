@@ -12,7 +12,7 @@ const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 console.log("Environment variables loaded.");
 
-const express = require('express'); 
+const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
@@ -211,11 +211,11 @@ const sendOrderEmail = async (email, orderRef, amount, items = []) => {
 
 const sendOrderStatusEmail = async (email, orderRef, status) => {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) return;
-  
+
   let statusMessage = '';
   let subject = '';
-  
-  switch(status.toLowerCase()) {
+
+  switch (status.toLowerCase()) {
     case 'processing':
       subject = `Order Processing - #${orderRef}`;
       statusMessage = "Your order is currently being processed and prepared for shipment.";
@@ -287,7 +287,11 @@ console.log('Environment loaded successfully');
 app.use(helmet());
 app.use(cors({
   origin(origin, callback) {
-    callback(null, true);
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS blocked: ' + origin));
+    }
   },
   credentials: true,
 }));
@@ -309,7 +313,7 @@ const maintenanceModeMiddleware = asyncHandler(async (req, res, next) => {
   if (req.path.startsWith('/admin')) {
     return next();
   }
-  
+
   try {
     const setting = await get("SELECT value FROM settings WHERE key = 'maintenance_mode'");
     if (setting && setting.value === 'true') {
@@ -477,7 +481,7 @@ app.get('/api/debug', asyncHandler(async (req, res) => {
   try {
     const result = await all("SELECT column_name, data_type, column_default FROM information_schema.columns WHERE table_name = 'products'");
     res.json(result);
-  } catch(e) {
+  } catch (e) {
     res.json({ error: e.message });
   }
 }));
@@ -537,7 +541,7 @@ app.get('/api/products', asyncHandler(async (req, res) => {
 
 app.post('/api/products', asyncHandler(async (req, res) => {
   const { name, price, image, description, category, gender } = req.body;
-  
+
   if (!name || !price || !image || !description || !category || !gender) {
     res.status(400).json({ message: 'All product fields are required.' });
     return;
@@ -640,11 +644,11 @@ app.post('/api/register', registerLimiter, asyncHandler(async (req, res) => {
     'INSERT INTO users (username, email, password, plain_password) VALUES (?, ?, ?, ?) RETURNING id',
     [username, email, passwordHash, password]
   );
-  
+
   let userId = result.lastID;
   if (!userId && result.rows && result.rows.length > 0) userId = result.rows[0].id;
   if (!userId && result.id) userId = result.id;
-  
+
   const user = { id: userId, username, email };
 
   sendWelcomeEmail(email, username);
@@ -712,27 +716,27 @@ app.post('/api/auth/google', loginLimiter, asyncHandler(async (req, res) => {
   const payload = ticket.getPayload();
   const email = payload.email;
   const username = payload.name;
-  
+
   if (!email) {
     return res.status(400).json({ message: 'Email not provided by Google.' });
   }
 
   let user = await get('SELECT id, username, email, password FROM users WHERE email = ?', [email]);
-  
+
   if (!user) {
     // Register the user
     const randomPassword = require('crypto').randomBytes(16).toString('hex');
     const passwordHash = await bcrypt.hash(randomPassword, 12);
-    
+
     const result = await run(
       'INSERT INTO users (username, email, password, plain_password) VALUES (?, ?, ?, ?) RETURNING id',
       [username, email, passwordHash, 'GoogleAuthUser']
     );
-    
+
     let userId = result.lastID;
     if (!userId && result.rows && result.rows.length > 0) userId = result.rows[0].id;
     if (!userId && result.id) userId = result.id;
-    
+
     user = { id: userId, username, email };
     sendWelcomeEmail(email, username);
   }
@@ -750,7 +754,7 @@ app.post('/api/auth/google', loginLimiter, asyncHandler(async (req, res) => {
 
 app.post('/api/auth/refresh', asyncHandler(async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-  
+
   if (!refreshToken) {
     return res.status(401).json({ message: 'Refresh token not found.' });
   }
@@ -786,9 +790,9 @@ app.post('/api/auth/refresh', asyncHandler(async (req, res) => {
   }
 
   await run('UPDATE refresh_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE id = ?', [storedToken.id]);
-  
+
   const { accessToken: newAccess, refreshToken: newRefresh, rememberMe } = await generateTokens(user, req, storedToken.remember_me, storedToken.family_id);
-  
+
   setAuthCookies(res, newAccess, newRefresh, rememberMe);
 
   res.json({ accessToken: newAccess, token: newAccess });
@@ -816,7 +820,7 @@ app.get('/api/auth/sessions', requireAuth, asyncHandler(async (req, res) => {
     WHERE user_id = ? AND revoked_at IS NULL AND expires_at > CURRENT_TIMESTAMP
     ORDER BY last_active DESC
   `, [req.auth.id]);
-  
+
   // Identify the current session from the cookie
   let currentFamilyId = null;
   if (req.cookies.refreshToken) {
@@ -836,7 +840,7 @@ app.get('/api/auth/sessions', requireAuth, asyncHandler(async (req, res) => {
 app.delete('/api/auth/sessions/:id', requireAuth, asyncHandler(async (req, res) => {
   const sessionId = req.params.id;
   const session = await get('SELECT * FROM refresh_tokens WHERE id = ? AND user_id = ?', [sessionId, req.auth.id]);
-  
+
   if (!session) {
     res.status(404).json({ message: 'Session not found or already logged out.' });
     return;
@@ -1004,7 +1008,7 @@ app.post('/api/auth/google', asyncHandler(async (req, res) => {
     res.status(401).json({ message: 'Invalid Google token.' });
     return;
   }
-  
+
   if (!payload || !payload.email) {
     res.status(401).json({ message: 'Invalid Google token payload.' });
     return;
@@ -1022,7 +1026,7 @@ app.post('/api/auth/google', asyncHandler(async (req, res) => {
     );
     user = await get('SELECT * FROM users WHERE id = ?', [result.lastID || result.id]);
     if (!user) user = { id: result.lastID, username, email, points: 500, role: 'user' };
-    
+
     // Send welcome email in background
     sendWelcomeEmail(email, username).catch(err => console.error('Welcome email failed:', err));
   } else if (!user.google_id) {
@@ -1059,7 +1063,7 @@ app.post('/api/auth/forgot-password', forgotPasswordLimiter, asyncHandler(async 
   const otp = generateOtp();
   await storeOtp(email, otp);
   sendOtpEmail(email, otp).catch(err => console.error('Background email failed:', err));
-  
+
   res.json({ message: `Password reset OTP sent to your email.` });
 }));
 
@@ -1097,10 +1101,10 @@ app.post('/api/auth/reset-password', forgotPasswordLimiter, asyncHandler(async (
 app.delete('/api/users/me', requireAuth, asyncHandler(async (req, res) => {
   // Delete user's payments first (if any) since we don't have cascade delete
   await run('DELETE FROM payments WHERE user_id = ?', [req.auth.id]);
-  
+
   // Delete the user
   const result = await run('DELETE FROM users WHERE id = ?', [req.auth.id]);
-  
+
   if (result.changes === 0) {
     res.status(404).json({ message: 'User not found.' });
     return;
@@ -1123,7 +1127,7 @@ app.get('/api/admin/stats', asyncHandler(async (req, res) => {
   const payments = await all('SELECT id, amount, status, method, reference, created_at, status_track FROM payments ORDER BY created_at DESC');
   const coupons = await all('SELECT * FROM coupons');
   const returns = await all('SELECT * FROM returns ORDER BY created_at DESC');
-  
+
   res.json({
     users,
     products,
@@ -1138,12 +1142,12 @@ app.get('/api/admin/stats', asyncHandler(async (req, res) => {
 app.post('/api/coupons/validate', asyncHandler(async (req, res) => {
   const { code } = req.body;
   const coupon = await get('SELECT * FROM coupons WHERE code = ? AND active = 1', [code]);
-  
+
   if (!coupon) {
     res.status(404).json({ message: 'Invalid or expired coupon code.' });
     return;
   }
-  
+
   res.json(coupon);
 }));
 
@@ -1180,7 +1184,7 @@ app.post('/api/admin/auth/login', loginLimiter, asyncHandler(async (req, res) =>
   ]);
 
   const token = jwt.sign({ id: admin.id, isAdmin: true }, JWT_SECRET, { expiresIn: '12h' });
-  
+
   res.cookie('adminToken', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -1236,7 +1240,7 @@ app.get('/api/admin/analytics', authenticateAdmin, requirePermission('view_dashb
 
   const daysMap = {};
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  
+
   // Initialize last 7 days
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
@@ -1280,7 +1284,7 @@ app.get('/api/admin/audit-logs', authenticateAdmin, requirePermission('view_dash
     ORDER BY created_at DESC 
     LIMIT ?
   `, [limit]);
-  
+
   const admins = await all('SELECT id, email FROM admin_users');
   const adminMap = {};
   admins.forEach(a => adminMap[a.id] = a.email);
@@ -1292,7 +1296,7 @@ app.get('/api/admin/audit-logs', authenticateAdmin, requirePermission('view_dash
       if (details.admin_id && adminMap[details.admin_id]) {
         admin_email = adminMap[details.admin_id];
       }
-    } catch(e) {}
+    } catch (e) { }
     return { ...log, admin_email };
   });
 
@@ -1320,13 +1324,13 @@ app.get('/api/admin/orders', authenticateAdmin, requirePermission('manage_orders
 app.patch('/api/admin/orders/:id', authenticateAdmin, requirePermission('manage_orders'), asyncHandler(async (req, res) => {
   const { status_track } = req.body;
   await run('UPDATE payments SET status_track = ? WHERE id = ?', [status_track, req.params.id]);
-  
+
   // Send status update email
   const order = await get('SELECT p.reference, u.email FROM payments p JOIN users u ON p.user_id = u.id WHERE p.id = ?', [req.params.id]);
   if (order && order.email) {
     await sendOrderStatusEmail(order.email, order.reference, status_track);
   }
-  
+
   res.json({ message: 'Order status updated' });
 }));
 
@@ -1360,7 +1364,7 @@ app.get('/api/admin/settings', authenticateAdmin, requirePermission('manage_sett
 
 app.post('/api/admin/settings', authenticateAdmin, requirePermission('manage_settings'), asyncHandler(async (req, res) => {
   const settings = req.body; // e.g. { hero_banner_text: "Summer!" }
-  
+
   for (const [key, value] of Object.entries(settings)) {
     // Upsert logic for SQLite
     await run('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value', [key, value]);
@@ -1409,7 +1413,7 @@ app.patch('/api/admin/products/:id', authenticateAdmin, requirePermission('manag
 
 app.post('/api/admin/products', authenticateAdmin, requirePermission('manage_products'), asyncHandler(async (req, res) => {
   const { name, price, image, description, category, gender, stock } = req.body;
-  
+
   if (!name || !price || !image || !description || !category || !gender) {
     res.status(400).json({ message: 'All required fields must be provided.' });
     return;
@@ -1421,7 +1425,7 @@ app.post('/api/admin/products', authenticateAdmin, requirePermission('manage_pro
     'INSERT INTO products (name, price, image, description, category, gender, stock) VALUES (?, ?, ?, ?, ?, ?, ?)',
     [name, parseInt(price), image, description, category, gender, stockVal]
   );
-  
+
   res.status(201).json({ message: 'Product created successfully' });
 }));
 
@@ -1482,7 +1486,7 @@ app.post('/api/payments/razorpay-order', requireAuth, asyncHandler(async (req, r
   }
 
   const amount = parseAmount(req.body.amount);
-  
+
   if (!amount || amount <= 0) {
     res.status(400).json({ message: 'Payment amount must be greater than zero.' });
     return;
@@ -1530,22 +1534,22 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
   // Handle Card or UPI via Razorpay
   if (method === 'card' || method === 'upi') {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount, metadata } = req.body;
-    
+
     if (process.env.RAZORPAY_KEY_SECRET && !process.env.RAZORPAY_KEY_SECRET.includes('YOUR_KEY_SECRET')) {
       if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-         res.status(400).json({ message: 'Payment verification failed. Missing signature parameters.' });
-         return;
+        res.status(400).json({ message: 'Payment verification failed. Missing signature parameters.' });
+        return;
       }
       const generatedSignature = createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-                                 .update(razorpay_order_id + "|" + razorpay_payment_id)
-                                 .digest('hex');
-                                 
+        .update(razorpay_order_id + "|" + razorpay_payment_id)
+        .digest('hex');
+
       if (generatedSignature !== razorpay_signature) {
         res.status(400).json({ message: 'Payment verification failed. Invalid signature.' });
         return;
       }
     }
-    
+
     const paymentId = razorpay_payment_id || `pay_${randomUUID().replace(/-/g, '').slice(0, 18)}`;
     const reference = razorpay_order_id || `AURA-${Date.now()}-${Math.floor(Math.random() * 9000 + 1000)}`;
 
@@ -1648,7 +1652,7 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
     res.status(201).json(responsePayload);
     return;
   }
-  
+
   res.status(400).json({ message: 'Unsupported payment method. Use COD, UPI, or Card.' });
 }));
 
@@ -1700,11 +1704,11 @@ app.post('/api/auth/google', asyncHandler(async (req, res) => {
 app.post('/api/returns', authenticateUser, asyncHandler(async (req, res) => {
   const { orderId, productId, productName, reason } = req.body;
   const userId = req.auth.id;
-  
+
   await run('INSERT INTO returns (order_id, product_id, user_id, reason, status) VALUES (?, ?, ?, ?, ?)', [orderId, productId, userId, reason, 'pending']);
-  
+
   await sendReturnEmail(req.auth.email, orderId, productName, reason);
-  
+
   res.json({ message: 'Return request submitted successfully' });
 }));
 
@@ -1713,9 +1717,9 @@ app.post('/api/reviews', authenticateUser, asyncHandler(async (req, res) => {
   const { productId, product_id, rating, comment } = req.body;
   const username = req.auth.username || 'Anonymous';
   const finalId = productId || product_id;
-  
+
   await run('INSERT INTO reviews (product_id, username, rating, comment) VALUES (?, ?, ?, ?)', [finalId, username, rating, comment]);
-  
+
   res.json({ message: 'Review added successfully' });
 }));
 
@@ -1729,14 +1733,14 @@ app.get('/api/reviews/:productId', asyncHandler(async (req, res) => {
 app.patch('/api/admin/orders/:id/payment', authenticateAdmin, requirePermission('manage_orders'), asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  
+
   // if setting to 'paid', also update status_track to 'processing'
   if (status === 'paid') {
     await run('UPDATE payments SET status = ?, status_track = ? WHERE id = ?', [status, 'processing', id]);
   } else {
     await run('UPDATE payments SET status = ? WHERE id = ?', [status, id]);
   }
-  
+
   res.json({ message: 'Order payment status updated successfully' });
 }));
 
