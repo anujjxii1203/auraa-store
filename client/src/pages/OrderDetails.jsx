@@ -23,22 +23,35 @@ const OrderDetails = () => {
   const [returnModalOpen, setReturnModalOpen] = useState(false);
   const [returnProduct, setReturnProduct] = useState(null);
   const [returnReason, setReturnReason] = useState("");
+  const [returnDetails, setReturnDetails] = useState("");
+  const [returnType, setReturnType] = useState("refund");
+  const [returnPhoto, setReturnPhoto] = useState(null);
 
   const handleReturnSubmit = async () => {
-    if (!returnReason.trim()) {
-      showToast("Please enter a reason for returning", "error");
+    if (!returnReason) {
+      showToast("Please select a reason for returning", "error");
       return;
     }
     try {
+      const payload = JSON.stringify({
+        primaryReason: returnReason,
+        details: returnDetails,
+        returnType: returnType,
+        hasPhoto: !!returnPhoto
+      });
+
       await api.post('/returns', { 
         orderId: order.id, 
         productId: returnProduct.id || returnProduct.product_id, 
         productName: returnProduct.name, 
-        reason: returnReason 
+        reason: payload 
       });
       showToast("Return request submitted! Our team will contact you shortly.", "success");
       setReturnModalOpen(false);
       setReturnReason("");
+      setReturnDetails("");
+      setReturnType("refund");
+      setReturnPhoto(null);
     } catch(err) {
       showToast("Failed to submit return request", "error");
     }
@@ -401,18 +414,64 @@ const OrderDetails = () => {
       )}
 
       {returnModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--bg-primary)', padding: '30px', borderRadius: '12px', width: '90%', maxWidth: '500px' }}>
-            <h2 style={{ marginTop: 0, marginBottom: '20px', fontSize: '20px', fontWeight: '800' }}>Return {returnProduct?.name}</h2>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ background: 'var(--bg-primary)', padding: '30px', borderRadius: '12px', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ marginTop: 0, marginBottom: '5px', fontSize: '20px', fontWeight: '800' }}>Return: {returnProduct?.name}</h2>
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', marginBottom: '20px' }} />
+            
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Reason for Return</label>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Reason *</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {["Size too small / large", "Wrong item received", "Damaged / defective", "Not as described", "Changed my mind"].map((reason) => (
+                  <label key={reason} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                    <input 
+                      type="radio" 
+                      name="returnReason"
+                      value={reason} 
+                      checked={returnReason === reason} 
+                      onChange={(e) => setReturnReason(e.target.value)} 
+                    />
+                    {reason}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Additional details (optional)</label>
               <textarea 
-                value={returnReason}
-                onChange={(e) => setReturnReason(e.target.value)}
-                placeholder="Please explain why you are returning this item..."
-                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border-color)', minHeight: '100px', resize: 'vertical', fontFamily: 'inherit' }}
+                value={returnDetails}
+                onChange={(e) => setReturnDetails(e.target.value)}
+                placeholder="Please explain in more detail..."
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border-color)', minHeight: '80px', resize: 'vertical', fontFamily: 'inherit' }}
               />
             </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Upload photo (if damaged/wrong)</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <label style={{ display: 'inline-block', padding: '8px 16px', border: '1.5px dashed var(--border-color)', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#666' }}>
+                  + Add photo
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => setReturnPhoto(e.target.files[0])} />
+                </label>
+                {returnPhoto && <span style={{ fontSize: '12px', color: 'var(--teal)', fontWeight: '600' }}>{returnPhoto.name}</span>}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '30px' }}>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Return type *</label>
+              <div style={{ display: 'flex', gap: '20px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                  <input type="radio" name="returnType" value="refund" checked={returnType === "refund"} onChange={(e) => setReturnType(e.target.value)} />
+                  Refund
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                  <input type="radio" name="returnType" value="exchange" checked={returnType === "exchange"} onChange={(e) => setReturnType(e.target.value)} />
+                  Exchange (diff size)
+                </label>
+              </div>
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
               <button 
                 onClick={() => setReturnModalOpen(false)}
@@ -422,9 +481,9 @@ const OrderDetails = () => {
               </button>
               <button 
                 onClick={handleReturnSubmit}
-                style={{ padding: '10px 20px', background: 'var(--ss-red)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}
+                style={{ padding: '10px 20px', background: 'var(--ss-red)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}
               >
-                Submit Return
+                Submit Return &rarr;
               </button>
             </div>
           </div>
