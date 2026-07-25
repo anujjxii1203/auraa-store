@@ -45,15 +45,12 @@ const ProfileLayout = () => {
               <div className="avatar" style={{ width: '60px', height: '60px', background: '#008080', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: '900', flexShrink: 0 }}>
                 {(user?.username || 'A').charAt(0).toUpperCase()}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                 <h2 style={{ fontSize: '18px', fontWeight: '950', color: 'var(--text-primary)', margin: 0, wordBreak: 'break-word' }}>
                   {(user?.username || 'Customer').toUpperCase()}
                 </h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '12px', margin: '2px 0 6px 0', wordBreak: 'break-all' }}>
-                  {user?.email || ''}
-                </p>
 
-                {/* Aligned Aura Points Pill */}
+                {/* Aligned Aura Points Pill Next to Name */}
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#212121', color: '#fff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '800' }}>
                   <span style={{ color: '#aaa', letterSpacing: '0.5px' }}>AURA POINTS:</span>
                   <span style={{ color: '#ff4444', fontWeight: '950', fontSize: '13px' }}>{user?.points || 0}</span>
