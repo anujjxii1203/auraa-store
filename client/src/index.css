@@ -34,7 +34,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   max-width: 100%;
   overflow-x: hidden;
 }
@@ -307,6 +308,7 @@ button:disabled {
     grid-template-columns: 1fr;
     gap: 20px;
   }
+
   .profile-sidebar-header {
     display: flex;
     align-items: center;
@@ -314,16 +316,19 @@ button:disabled {
     text-align: left !important;
     margin-bottom: 20px !important;
   }
+
   .profile-sidebar-header .avatar {
     width: 50px !important;
     height: 50px !important;
     font-size: 20px !important;
     margin: 0 !important;
   }
+
   .profile-sidebar-header .points-card {
     margin: 0 0 0 auto !important;
     padding: 10px !important;
   }
+
   .profile-sidebar-nav {
     display: flex;
     overflow-x: auto;
@@ -331,7 +336,9 @@ button:disabled {
     padding-bottom: 10px;
     white-space: nowrap;
   }
-  .profile-sidebar-nav > a > div, .profile-sidebar-nav > div {
+
+  .profile-sidebar-nav>a>div,
+  .profile-sidebar-nav>div {
     padding: 8px 12px !important;
     font-size: 12px !important;
     margin-top: 0 !important;
@@ -857,8 +864,8 @@ button:disabled {
       rgba(0, 0, 0, 0.55) 100%);
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: 52px;
+  justify-content: flex-end;
+  padding: 52px 52px 100px 52px;
   z-index: 3;
 }
 
