@@ -484,6 +484,70 @@ function normalizePaymentPayload(body) {
 
 const requireAuth = authenticateUser;
 
+// Points-to-rupee conversion (10 points = 1 rupee) and GST rate, kept server-side
+// so the client can never dictate discount amounts.
+const POINTS_PER_RUPEE = 10;
+const GST_MULTIPLIER = 1.05;
+
+// Recompute an order total entirely from server-side data. The client may only
+// supply the cart items, an optional coupon code, and a usePoints flag — never
+// rupee discount values. Returns { error } or { expectedTotal, pointsToDebit }.
+async function resolveOrderTotal({ items, couponCode, usePoints, user }) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return { error: 'Order must contain at least one item.' };
+  }
+
+  let baseSubtotal = 0;
+  for (const item of items) {
+    const qty = Number(item.quantity || 0);
+    if (!Number.isInteger(qty) || qty <= 0) {
+      return { error: 'Invalid item quantity in order.' };
+    }
+    const product = await get('SELECT price FROM products WHERE id = ? AND deleted_at IS NULL', [item.id]);
+    if (!product) {
+      return { error: 'Invalid product in order.' };
+    }
+    baseSubtotal += Number(product.price) * qty;
+  }
+
+  // Coupon discount — resolved from DB, never from the client.
+  let couponDiscount = 0;
+  if (couponCode) {
+    const coupon = await get(
+      'SELECT discount_type, discount_value FROM coupons WHERE code = ? AND active = 1 AND deleted_at IS NULL',
+      [String(couponCode).trim().toUpperCase()]
+    );
+    if (!coupon) {
+      return { error: 'Invalid or expired coupon code.' };
+    }
+    if (coupon.discount_type === 'percentage') {
+      couponDiscount = baseSubtotal * (Number(coupon.discount_value) / 100);
+    } else {
+      couponDiscount = Number(coupon.discount_value);
+    }
+  }
+  couponDiscount = Math.max(0, Math.min(couponDiscount, baseSubtotal));
+  const afterCoupon = baseSubtotal - couponDiscount;
+
+  // Points discount — capped by the user's real balance and by 50% of the
+  // post-coupon total, mirroring the client UI but authoritative here.
+  let pointsDiscount = 0;
+  let pointsToDebit = 0;
+  if (usePoints) {
+    const fresh = await get('SELECT points FROM users WHERE id = ?', [user.id]);
+    const availablePoints = Number(fresh?.points || 0);
+    const maxDiscountFromPoints = Math.floor(availablePoints / POINTS_PER_RUPEE);
+    pointsDiscount = Math.min(maxDiscountFromPoints, Math.floor(afterCoupon * 0.5));
+    pointsDiscount = Math.max(0, pointsDiscount);
+    pointsToDebit = pointsDiscount * POINTS_PER_RUPEE;
+  }
+
+  const taxableSubtotal = Math.max(0, afterCoupon - pointsDiscount);
+  const expectedTotal = Math.round(taxableSubtotal * GST_MULTIPLIER);
+
+  return { expectedTotal, pointsToDebit };
+}
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', port: PORT });
 });
@@ -1562,31 +1626,22 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
       }
     }
 
-    // Server-side amount validation: recompute from DB prices to prevent tampering.
-    // Orders MUST contain items so the amount is always derived from DB prices.
-    if (!metadata || !Array.isArray(metadata.items) || metadata.items.length === 0) {
-      res.status(400).json({ message: 'Order must contain at least one item.' });
+    // Server-side amount validation: recompute the entire total from DB data.
+    // Discounts (coupon + points) are resolved server-side; the client only
+    // supplies the coupon code and a usePoints flag, never rupee amounts.
+    const resolved = await resolveOrderTotal({
+      items: metadata?.items,
+      couponCode: metadata?.couponCode,
+      usePoints: metadata?.usePoints === true,
+      user: req.auth,
+    });
+    if (resolved.error) {
+      res.status(400).json({ message: resolved.error });
       return;
     }
-    let baseSubtotal = 0;
-    for (const item of metadata.items) {
-      const qty = Number(item.quantity || 0);
-      if (!Number.isInteger(qty) || qty <= 0) {
-        res.status(400).json({ message: 'Invalid item quantity in order.' });
-        return;
-      }
-      const product = await get('SELECT price FROM products WHERE id = ? AND deleted_at IS NULL', [item.id]);
-      if (!product) {
-        res.status(400).json({ message: 'Invalid product in order.' });
-        return;
-      }
-      baseSubtotal += Number(product.price) * qty;
-    }
-    const discount = Number(metadata?.discount || 0) + Number(metadata?.pointsDiscount || 0);
-    const taxableSubtotal = Math.max(0, baseSubtotal - discount);
-    const expectedTotal = Math.round(taxableSubtotal * 1.05);
+    const { expectedTotal, pointsToDebit } = resolved;
 
-    if (Math.abs(expectedTotal - Number(amount)) > 10) {
+    if (Math.abs(expectedTotal - Number(amount)) > 1) {
       res.status(400).json({ message: 'Order amount mismatch. Please refresh your cart and try again.' });
       return;
     }
@@ -1618,7 +1673,10 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
       'ORDER_PLACED', JSON.stringify({ user_id: req.auth.id, payment_id: paymentId, amount, method: 'online' }), req.ip || 'unknown'
     ]);
 
-    // Update user points (online payment is already 'paid', so award now and mark it)
+    // Update user points: debit redeemed points, then award earned points.
+    if (pointsToDebit > 0) {
+      await run('UPDATE users SET points = GREATEST(0, points - ?) WHERE id = ?', [pointsToDebit, req.auth.id]);
+    }
     const pointsEarned = Math.floor(amount * 0.1);
     await run('UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?', [pointsEarned, req.auth.id]);
     await run('UPDATE payments SET points_awarded = 1 WHERE id = ?', [paymentId]);
@@ -1661,31 +1719,21 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
 
     const { amount, metadata } = normalized;
 
-    // Server-side amount validation: recompute from DB prices to prevent tampering.
-    // Orders MUST contain items so the amount is always derived from DB prices.
-    if (!metadata || !Array.isArray(metadata.items) || metadata.items.length === 0) {
-      res.status(400).json({ message: 'Order must contain at least one item.' });
+    // Server-side amount validation using resolveOrderTotal — discounts are
+    // derived from DB data only; client rupee values are ignored.
+    const resolved = await resolveOrderTotal({
+      items: metadata?.items,
+      couponCode: metadata?.couponCode,
+      usePoints: metadata?.usePoints === true,
+      user: req.auth,
+    });
+    if (resolved.error) {
+      res.status(400).json({ message: resolved.error });
       return;
     }
-    let baseSubtotal = 0;
-    for (const item of metadata.items) {
-      const qty = Number(item.quantity || 0);
-      if (!Number.isInteger(qty) || qty <= 0) {
-        res.status(400).json({ message: 'Invalid item quantity in order.' });
-        return;
-      }
-      const product = await get('SELECT price FROM products WHERE id = ? AND deleted_at IS NULL', [item.id]);
-      if (!product) {
-        res.status(400).json({ message: 'Invalid product in order.' });
-        return;
-      }
-      baseSubtotal += Number(product.price) * qty;
-    }
-    const discount = Number(metadata?.discount || 0) + Number(metadata?.pointsDiscount || 0);
-    const taxableSubtotal = Math.max(0, baseSubtotal - discount);
-    const expectedTotal = Math.round(taxableSubtotal * 1.05);
+    const { expectedTotal, pointsToDebit } = resolved;
 
-    if (Math.abs(expectedTotal - Number(amount)) > 10) {
+    if (Math.abs(expectedTotal - Number(amount)) > 1) {
       res.status(400).json({ message: 'Order amount mismatch. Please refresh your cart and try again.' });
       return;
     }
@@ -1706,6 +1754,12 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
     // NOTE: Loyalty points for COD are awarded when the order is marked 'paid'
     // by an admin (see PATCH /api/admin/orders/:id/payment), not at placement time,
     // to prevent point farming on orders that are never actually paid.
+
+    // Debit any redeemed points now, at order placement (the discount is applied
+    // to this order regardless of when the COD payment is collected).
+    if (pointsToDebit > 0) {
+      await run('UPDATE users SET points = GREATEST(0, points - ?) WHERE id = ?', [pointsToDebit, req.auth.id]);
+    }
 
     if (metadata && metadata.items && Array.isArray(metadata.items)) {
       for (const item of metadata.items) {

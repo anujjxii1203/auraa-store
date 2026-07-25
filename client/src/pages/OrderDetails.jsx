@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/client';
-import { Package, Truck, CheckCircle, Home, ArrowLeft, Star, RotateCcw } from 'lucide-react';
+import { Package, Truck, CheckCircle, Home, ArrowLeft, Star, RotateCcw, XCircle } from 'lucide-react';
 import PageTitle from '../components/PageTitle';
 import { formatPrice, FALLBACK_IMAGE } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
@@ -282,55 +282,123 @@ const OrderDetails = () => {
             <div style={{ background: 'var(--bg-secondary)', padding: '30px', borderRadius: '12px', marginBottom: '20px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: '800', marginBottom: '25px', color: 'var(--text-primary)' }}>ORDER STATUS</h3>
 
-              <div style={{ position: 'relative', margin: '0 10px' }}>
-                {/* Connecting line */}
-                <div style={{ position: 'absolute', top: 20, bottom: 20, left: 19, width: '2px', background: '#e0e0e0', zIndex: 1 }} />
-                <div style={{ position: 'absolute', top: 20, left: 19, width: '2px', background: 'var(--teal)', zIndex: 2, height: currentStep >= 3 ? '100%' : currentStep === 2 ? '66%' : currentStep === 1 ? '33%' : '0%', transition: 'height 0.5s ease' }} />
-
-                {/* Step 1: PLACED */}
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '30px', position: 'relative', zIndex: 3 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--teal)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <CheckCircle size={20} />
+              {isCancelled ? (
+                <div>
+                  {/* Big Red Cancelled Highlight Banner */}
+                  <div style={{ background: '#ffebee', border: '1.5px solid #ffcdd2', padding: '18px 20px', borderRadius: '10px', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <XCircle size={32} color="#e11b23" />
+                    <div>
+                      <h4 style={{ margin: '0 0 2px 0', fontSize: '18px', fontWeight: '950', color: '#e11b23' }}>ORDER CANCELLED</h4>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#666', fontWeight: '500' }}>This order was cancelled by you. No payment was charged or a refund has been initiated.</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>ORDER CONFIRMED</h4>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#666', fontWeight: '500' }}>Your order has been placed.</p>
+
+                  <div style={{ position: 'relative', margin: '0 10px' }}>
+                    <div style={{ position: 'absolute', top: 20, bottom: 20, left: 19, width: '2px', background: '#e0e0e0', zIndex: 1 }} />
+
+                    {/* Step 1: CANCELLED (HIGHLIGHTED) */}
+                    <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '30px', position: 'relative', zIndex: 3 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#e11b23', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <XCircle size={20} />
+                      </div>
+                      <div>
+                        <h4 style={{ margin: '0 0 5px 0', fontSize: '15px', fontWeight: '950', color: '#e11b23' }}>ORDER CANCELLED</h4>
+                        <p style={{ margin: 0, fontSize: '12px', color: '#666', fontWeight: '500' }}>Cancelled successfully.</p>
+                      </div>
+                    </div>
+
+                    {/* Step 2: ORDER CONFIRMED (UNSELECTED) */}
+                    <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '30px', position: 'relative', zIndex: 3, opacity: 0.5 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f0f0f0', color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <CheckCircle size={20} />
+                      </div>
+                      <div>
+                        <h4 style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: '700', color: '#999' }}>ORDER CONFIRMED</h4>
+                      </div>
+                    </div>
+
+                    {/* Step 3: SELLER PROCESSED (UNSELECTED) */}
+                    <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '30px', position: 'relative', zIndex: 3, opacity: 0.5 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f0f0f0', color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Package size={20} />
+                      </div>
+                      <div>
+                        <h4 style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: '700', color: '#999' }}>SELLER PROCESSED</h4>
+                      </div>
+                    </div>
+
+                    {/* Step 4: SHIPPED (UNSELECTED) */}
+                    <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '30px', position: 'relative', zIndex: 3, opacity: 0.5 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f0f0f0', color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Truck size={20} />
+                      </div>
+                      <div>
+                        <h4 style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: '700', color: '#999' }}>SHIPPED</h4>
+                      </div>
+                    </div>
+
+                    {/* Step 5: DELIVERED (UNSELECTED) */}
+                    <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', position: 'relative', zIndex: 3, opacity: 0.5 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f0f0f0', color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Home size={20} />
+                      </div>
+                      <div>
+                        <h4 style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: '700', color: '#999' }}>DELIVERED</h4>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              ) : (
+                <div style={{ position: 'relative', margin: '0 10px' }}>
+                  {/* Connecting line */}
+                  <div style={{ position: 'absolute', top: 20, bottom: 20, left: 19, width: '2px', background: '#e0e0e0', zIndex: 1 }} />
+                  <div style={{ position: 'absolute', top: 20, left: 19, width: '2px', background: 'var(--teal)', zIndex: 2, height: currentStep >= 3 ? '100%' : currentStep === 2 ? '66%' : currentStep === 1 ? '33%' : '0%', transition: 'height 0.5s ease' }} />
 
-                {/* Step 2: PROCESSING */}
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '30px', position: 'relative', zIndex: 3 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: currentStep >= 1 ? 'var(--teal)' : '#f0f0f0', color: currentStep >= 1 ? 'white' : '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Package size={20} />
+                  {/* Step 1: PLACED */}
+                  <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '30px', position: 'relative', zIndex: 3 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--teal)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <CheckCircle size={20} />
+                    </div>
+                    <div>
+                      <h4 style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>ORDER CONFIRMED</h4>
+                      <p style={{ margin: 0, fontSize: '12px', color: '#666', fontWeight: '500' }}>Your order has been placed.</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: '800', color: currentStep >= 1 ? 'var(--text-primary)' : '#999' }}>SELLER PROCESSED</h4>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#666', fontWeight: '500' }}>Seller has processed your order.</p>
+
+                  {/* Step 2: PROCESSING */}
+                  <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '30px', position: 'relative', zIndex: 3 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: currentStep >= 1 ? 'var(--teal)' : '#f0f0f0', color: currentStep >= 1 ? 'white' : '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Package size={20} />
+                    </div>
+                    <div>
+                      <h4 style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: '800', color: currentStep >= 1 ? 'var(--text-primary)' : '#999' }}>SELLER PROCESSED</h4>
+                      <p style={{ margin: 0, fontSize: '12px', color: '#666', fontWeight: '500' }}>Seller has processed your order.</p>
+                    </div>
+                  </div>
+
+                  {/* Step 3: SHIPPED */}
+                  <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '30px', position: 'relative', zIndex: 3 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: currentStep >= 2 ? 'var(--teal)' : '#f0f0f0', color: currentStep >= 2 ? 'white' : '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Truck size={20} />
+                    </div>
+                    <div>
+                      <h4 style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: '800', color: currentStep >= 2 ? 'var(--text-primary)' : '#999' }}>SHIPPED</h4>
+                      {currentStep >= 2 ? <p style={{ margin: 0, fontSize: '12px', color: '#666', fontWeight: '500' }}>Your item has been shipped.</p> : <p style={{ margin: 0, fontSize: '12px', color: '#666', fontWeight: '500' }}>Pending shipment</p>}
+                    </div>
+                  </div>
+
+                  {/* Step 4: DELIVERED */}
+                  <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', position: 'relative', zIndex: 3 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: currentStep >= 3 ? 'var(--teal)' : '#f0f0f0', color: currentStep >= 3 ? 'white' : '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Home size={20} />
+                    </div>
+                    <div>
+                      <h4 style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: '800', color: currentStep >= 3 ? 'var(--text-primary)' : '#999' }}>DELIVERED</h4>
+                      {currentStep >= 3 ? <p style={{ margin: 0, fontSize: '12px', color: '#666', fontWeight: '500' }}>Your item has been delivered.</p> : null}
+                    </div>
                   </div>
                 </div>
-
-                {/* Step 3: SHIPPED */}
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '30px', position: 'relative', zIndex: 3 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: currentStep >= 2 ? 'var(--teal)' : '#f0f0f0', color: currentStep >= 2 ? 'white' : '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Truck size={20} />
-                  </div>
-                  <div>
-                    <h4 style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: '800', color: currentStep >= 2 ? 'var(--text-primary)' : '#999' }}>SHIPPED</h4>
-                    {currentStep >= 2 ? <p style={{ margin: 0, fontSize: '12px', color: '#666', fontWeight: '500' }}>Your item has been shipped.</p> : <p style={{ margin: 0, fontSize: '12px', color: '#666', fontWeight: '500' }}>Pending shipment</p>}
-                  </div>
-                </div>
-
-                {/* Step 4: DELIVERED */}
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', position: 'relative', zIndex: 3 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: currentStep >= 3 ? 'var(--teal)' : '#f0f0f0', color: currentStep >= 3 ? 'white' : '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Home size={20} />
-                  </div>
-                  <div>
-                    <h4 style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: '800', color: currentStep >= 3 ? 'var(--text-primary)' : '#999' }}>DELIVERED</h4>
-                    {currentStep >= 3 ? <p style={{ margin: 0, fontSize: '12px', color: '#666', fontWeight: '500' }}>Your item has been delivered.</p> : null}
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Delivery Details */}
@@ -362,16 +430,18 @@ const OrderDetails = () => {
 
           {/* RIGHT COLUMN */}
           <div>
-            {/* Return Window */}
-            <div style={{ background: 'var(--bg-secondary)', padding: '25px', borderRadius: '12px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <RotateCcw size={20} color="#2874f0" />
+            {/* Return Window (Only if NOT cancelled) */}
+            {!isCancelled && (
+              <div style={{ background: 'var(--bg-secondary)', padding: '25px', borderRadius: '12px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <RotateCcw size={20} color="#2874f0" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '15px', fontWeight: '800', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>Return window available for 7 days</h3>
+                  <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>You can easily return this item from your orders panel.</p>
+                </div>
               </div>
-              <div>
-                <h3 style={{ fontSize: '15px', fontWeight: '800', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>Return window available for 7 days</h3>
-                <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>You can easily return this item from your orders panel.</p>
-              </div>
-            </div>
+            )}
 
             {/* Items */}
             <div style={{ marginBottom: '20px' }}>
@@ -399,24 +469,26 @@ const OrderDetails = () => {
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '15px' }}>
                         <p style={{ margin: '13px', fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)' }}>{formatPrice(item.price)}</p>
 
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                          <button
-                            className="order-action-btn review"
-                            onClick={() => {
-                              setReviewProduct(item);
-                              setReviewModalOpen(true);
-                            }}>
-                            <Star size={14} fill="currentColor" /> REVIEW
-                          </button>
-                          <button
-                            className="order-action-btn return"
-                            onClick={() => {
-                              setReturnProduct(item);
-                              setReturnModalOpen(true);
-                            }}>
-                            <RotateCcw size={14} /> RETURN
-                          </button>
-                        </div>
+                        {!isCancelled && (
+                          <div style={{ display: 'flex', gap: '12px' }}>
+                            <button
+                              className="order-action-btn review"
+                              onClick={() => {
+                                setReviewProduct(item);
+                                setReviewModalOpen(true);
+                              }}>
+                              <Star size={14} fill="currentColor" /> REVIEW
+                            </button>
+                            <button
+                              className="order-action-btn return"
+                              onClick={() => {
+                                setReturnProduct(item);
+                                setReturnModalOpen(true);
+                              }}>
+                              <RotateCcw size={14} /> RETURN
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
