@@ -1566,7 +1566,7 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
     if (metadata && metadata.items && Array.isArray(metadata.items)) {
       for (const item of metadata.items) {
         if (item.id && item.quantity) {
-          await run('UPDATE products SET stock = MAX(0, stock - ?) WHERE id = ?', [item.quantity, item.id]);
+          await run('UPDATE products SET stock = CASE WHEN stock - ? < 0 THEN 0 ELSE stock - ? END WHERE id = ?', [item.quantity, item.quantity, item.id]);
         }
       }
     }
@@ -1622,7 +1622,7 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
     if (metadata && metadata.items && Array.isArray(metadata.items)) {
       for (const item of metadata.items) {
         if (item.id && item.quantity) {
-          await run('UPDATE products SET stock = MAX(0, stock - ?) WHERE id = ?', [item.quantity, item.id]);
+          await run('UPDATE products SET stock = CASE WHEN stock - ? < 0 THEN 0 ELSE stock - ? END WHERE id = ?', [item.quantity, item.quantity, item.id]);
         }
       }
     }
