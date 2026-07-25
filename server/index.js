@@ -540,7 +540,7 @@ app.get('/api/products', asyncHandler(async (req, res) => {
   res.json(products);
 }));
 
-app.post('/api/products', asyncHandler(async (req, res) => {
+app.post('/api/products', authenticateAdmin, requirePermission('manage_products'), asyncHandler(async (req, res) => {
   const { name, price, image, description, category, gender } = req.body;
 
   if (!name || !price || !image || !description || !category || !gender) {
@@ -579,7 +579,7 @@ app.get('/api/products/:id', asyncHandler(async (req, res) => {
   const reviews = await all('SELECT id, username, rating, comment, created_at FROM reviews WHERE product_id = ? ORDER BY created_at DESC', [productId]);
   res.json({ ...product, reviews });
 }));
-app.delete('/api/products/:id', requireAuth, asyncHandler(async (req, res) => {
+app.delete('/api/products/:id', authenticateAdmin, requirePermission('manage_products'), asyncHandler(async (req, res) => {
   const productId = req.params.id;
 
   if (!productId || productId === 'undefined' || productId === 'null') {
@@ -587,7 +587,7 @@ app.delete('/api/products/:id', requireAuth, asyncHandler(async (req, res) => {
     return;
   }
 
-  const result = await run('DELETE FROM products WHERE id = ?', [productId]);
+  const result = await run('UPDATE products SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?', [productId]);
   if (result.changes === 0) {
     res.status(404).json({ message: 'Product not found.' });
     return;
@@ -1716,9 +1716,9 @@ app.post('/api/reviews', authenticateUser, asyncHandler(async (req, res) => {
   const userId = req.auth.id;
   const finalId = parseInt(productId || product_id);
 
-  // Verified purchase check: user must have a paid order containing this product
+  // Verified purchase check: user must have an order containing this product that has been DELIVERED
   const userOrders = await all(
-    "SELECT metadata FROM payments WHERE user_id = ? AND (status = 'paid' OR status = 'completed' OR status_track IN ('processing','shipped','delivered'))",
+    "SELECT metadata FROM payments WHERE user_id = ? AND LOWER(status_track) = 'delivered'",
     [userId]
   );
 

@@ -77,8 +77,8 @@ const ProductDetails = () => {
           const res = await api.get('/orders/me');
           const orders = res.data;
           const purchased = orders.some(order => {
-             // ensure it's a paid/completed order
-             if (order.status !== 'paid' && order.status !== 'completed' && !['processing', 'shipped', 'delivered'].includes(order.status_track)) {
+             // ensure it's a delivered order
+             if (!order.status_track || order.status_track.toLowerCase() !== 'delivered') {
                  return false;
              }
              let items = [];
