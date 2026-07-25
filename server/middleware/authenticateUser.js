@@ -1,42 +1,51 @@
-const jwt = require('jsonwebtoken');
-const { get } = require('../database');
+const { ClerkExpressRequireAuth, clerkClient } = require('@clerk/clerk-sdk-node');
+const { get, run } = require('../database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'development_secret_change_me';
 
-const authenticateUser = async (req, res, next) => {
-  try {
-    // 1. Get token from cookies OR Bearer token (for mobile fallback)
-    let token;
-    
-    if (req.cookies && req.cookies.accessToken) {
-      token = req.cookies.accessToken;
-    } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
-    }
+const clerkAuth = ClerkExpressRequireAuth({});
 
-    if (!token) {
+const authenticateUser = async (req, res, next) => {
+  clerkAuth(req, res, async (err) => {
+    if (err) {
       return res.status(401).json({ message: 'Authentication required. Please log in.' });
     }
-
-    // 2. Verify token
-    const decoded = jwt.verify(token, JWT_SECRET);
     
-    // 3. Ensure user still exists
-    const user = await get('SELECT id, username, email, points, role FROM users WHERE id = ?', [decoded.id]);
-    
-    if (!user) {
-      return res.status(401).json({ message: 'User no longer exists. Please log in again.' });
-    }
+    try {
+      const clerkUserId = req.auth.userId;
+      if (!clerkUserId) {
+        return res.status(401).json({ message: 'Invalid session.' });
+      }
 
-    // 4. Attach user to request
-    req.auth = user;
-    next();
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'TokenExpired', message: 'Your session has expired.' });
+      // Find user in our local database by clerk_id (which we'll store in the google_id column for now)
+      let user = await get('SELECT id, username, email, points, role FROM users WHERE google_id = ?', [clerkUserId]);
+      
+      if (!user) {
+        // Fallback: If webhook failed, sync user on the fly
+        try {
+          const clerkUser = await clerkClient.users.getUser(clerkUserId);
+          const email = clerkUser.emailAddresses[0]?.emailAddress;
+          const username = clerkUser.firstName || clerkUser.username || 'User';
+          
+          const result = await run('INSERT INTO users (google_id, username, email) VALUES (?, ?, ?) RETURNING *', [clerkUserId, username, email]);
+          user = await get('SELECT id, username, email, points, role FROM users WHERE id = ?', [result.lastID || result.id]);
+          
+          if (!user) throw new Error("Insert failed");
+        } catch (syncErr) {
+          console.error("Failed to sync Clerk user on the fly:", syncErr);
+          // If we really can't sync, at least provide a dummy email to prevent crashes
+          req.auth = { id: 'pending_sync', clerkId: clerkUserId, role: 'user', email: 'no-reply@auraastore.com' };
+          return next();
+        }
+      }
+
+      // Attach local user to request (important for cart, orders, etc.)
+      req.auth = user;
+      next();
+    } catch (error) {
+      return res.status(401).json({ message: 'Invalid token. Please log in again.' });
     }
-    return res.status(401).json({ message: 'Invalid token. Please log in again.' });
-  }
+  });
 };
 
 const authorizeRole = (role) => {

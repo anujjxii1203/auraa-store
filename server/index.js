@@ -290,6 +290,11 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+// Clerk Webhooks must be parsed before express.json
+const clerkWebhooks = require('./routes/clerkWebhooks');
+app.use('/api/webhooks/clerk', clerkWebhooks);
+
 app.use(express.json({ limit: '100kb' }));
 app.use(cookieParser());
 app.use('/api', globalLimiter);

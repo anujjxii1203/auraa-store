@@ -58,8 +58,13 @@ const MainLayout = () => (
 
 
 
-import { GoogleOAuthProvider } from '@react-oauth/google';
+import { ClerkProvider } from '@clerk/clerk-react';
 
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!PUBLISHABLE_KEY) {
+  throw new Error("Missing Publishable Key");
+}
 function App() {
   const [initialLoad, setInitialLoad] = useState(true);
 
@@ -79,7 +84,7 @@ function App() {
   }
 
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || 'placeholder'}>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
       <Router>
         <ScrollToTop />
         <ToastProvider>
@@ -132,12 +137,12 @@ function App() {
                 </Routes>
               </div>
               </CartProvider>
-            </WishlistProvider>
-          </UserProvider>
-        </AdminAuthProvider>
-      </ToastProvider>
-    </Router>
-    </GoogleOAuthProvider>
+              </WishlistProvider>
+            </UserProvider>
+          </AdminAuthProvider>
+        </ToastProvider>
+      </Router>
+    </ClerkProvider>
   );
 }
 
