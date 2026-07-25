@@ -232,19 +232,19 @@ const OrderDetails = () => {
           <ArrowLeft size={16} /> BACK TO ORDERS
         </button>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '2px solid var(--border-color)', paddingBottom: '20px', marginBottom: '30px' }}>
+        <div className="order-details-header">
           <div>
-            <h1 style={{ fontSize: '32px', fontWeight: '950', margin: '0 0 10px 0', letterSpacing: '-1px', color: 'var(--text-primary)' }}>
+            <h1 className="order-details-title">
               ORDER #{order.reference || order.id}
             </h1>
             <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>Placed on {order.date}</p>
           </div>
-          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+          <div className="order-details-header-right">
             <p style={{ margin: '0 0 2px 0', color: '#666', fontSize: '14px' }}>Total Amount</p>
             <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: 'var(--ss-red)' }}>
               {formatPrice(order.total)}
             </h2>
-            <div style={{ display: 'flex', gap: '8px', marginTop: '5px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '5px', flexWrap: 'wrap' }}>
               <button
                 onClick={generateInvoice}
                 style={{
@@ -291,7 +291,7 @@ const OrderDetails = () => {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '40px' }}>
+        <div className="order-details-grid">
           {/* LEFT COLUMN */}
           <div>
             {/* Tracking Timeline */}

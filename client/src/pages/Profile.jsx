@@ -115,25 +115,24 @@ const Profile = () => {
                   {orders.map((order) => (
                     <div key={order.id} style={{ border: '1.5px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-primary)', flexShrink: 0 }}>
                       <div 
-                        className="order-header" 
+                        className="order-header-card" 
                         onClick={() => navigate(`/order/${order.reference || order.id}`)}
-                        style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', transition: '0.2s' }}
                       >
-                        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', minWidth: 0 }}>
+                        <div style={{ display: 'flex', gap: '15px', alignItems: 'center', minWidth: 0 }}>
                           <div style={{ display: 'flex', flexShrink: 0 }}>
                             {order.items.slice(0, 3).map((item, idx) => (
                               <img key={idx} src={item.image || FALLBACK_IMAGE} alt={item.name} onError={(e) => e.currentTarget.src = FALLBACK_IMAGE} style={{ width: '50px', height: '65px', objectFit: 'cover', borderRadius: '6px', marginLeft: idx > 0 ? '-25px' : '0', border: '2px solid var(--bg-primary)', zIndex: 10 - idx }} />
                             ))}
                           </div>
-                          <div style={{ minWidth: 0 }}>
-                            <p style={{ fontWeight: '900', fontSize: '14px', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>ORDER #{order.reference || order.id}</p>
-                            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{order.date}</p>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <p style={{ fontWeight: '900', fontSize: '14px', color: 'var(--text-primary)', wordBreak: 'break-word', margin: '0 0 2px 0' }}>ORDER #{order.reference || order.id}</p>
+                            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>{order.date}</p>
                           </div>
                         </div>
-                        <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-                          <div>
-                            <p style={{ fontWeight: '900', fontSize: '15px', color: 'var(--text-primary)' }}>{formatPrice(order.total)}</p>
-                            <p style={{ fontSize: '11px', color: order.status === 'delivered' ? 'var(--yaperz-green)' : '#e11b23', fontWeight: '800' }}>
+                        <div className="order-header-right">
+                          <div style={{ textAlign: 'right' }}>
+                            <p style={{ fontWeight: '900', fontSize: '15px', color: 'var(--text-primary)', margin: '0 0 2px 0' }}>{formatPrice(order.total)}</p>
+                            <p style={{ fontSize: '11px', color: order.status === 'delivered' ? 'var(--yaperz-green)' : '#e11b23', fontWeight: '800', margin: 0 }}>
                               {order.status === 'delivered' ? `DELIVERED ON ${order.date}` : order.status.toUpperCase()}
                             </p>
                           </div>

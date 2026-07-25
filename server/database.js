@@ -299,7 +299,7 @@ async function createPaymentsTable() {
       user_id INTEGER NOT NULL,
       amount INTEGER NOT NULL CHECK (amount > 0),
       method TEXT NOT NULL CHECK (method IN ('card', 'upi', 'cod')),
-      status TEXT NOT NULL CHECK (status IN ('paid', 'pending')),
+      status TEXT NOT NULL CHECK (status IN ('paid', 'pending', 'refunded', 'failed')),
       provider TEXT NOT NULL DEFAULT 'demo',
       reference TEXT NOT NULL UNIQUE,
       metadata TEXT,
@@ -336,7 +336,83 @@ async function createPaymentsTable() {
     }
   } catch (err) {}
 
+  // Record how many loyalty points were redeemed (debited) on this order, so a
+  // cancellation can refund exactly that many back to the user.
+  try {
+    if (dbType === 'postgres') {
+      await run('ALTER TABLE payments ADD COLUMN IF NOT EXISTS points_redeemed INTEGER DEFAULT 0');
+    } else {
+      await run('ALTER TABLE payments ADD COLUMN points_redeemed INTEGER DEFAULT 0');
+    }
+  } catch (err) {}
+
+  // Widen the status CHECK constraint on pre-existing tables so admins can mark
+  // orders 'refunded'/'failed'. New DBs already get the wide constraint above.
+  await widenPaymentsStatusConstraint();
+
   await run('CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id)');
+}
+
+// Migrate an existing payments table whose status CHECK only allows
+// ('paid','pending') to also allow ('refunded','failed').
+async function widenPaymentsStatusConstraint() {
+  try {
+    if (dbType === 'postgres') {
+      // Drop the auto-named check constraint if present, then re-add the wide one.
+      await run('ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_status_check');
+      await run("ALTER TABLE payments ADD CONSTRAINT payments_status_check CHECK (status IN ('paid', 'pending', 'refunded', 'failed'))");
+      return;
+    }
+
+    // SQLite: CHECK constraints can't be altered in place. Only rebuild if the
+    // old (narrow) constraint is actually present, to avoid needless churn.
+    const row = await get("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'payments'");
+    const ddl = row && row.sql ? String(row.sql) : '';
+    const alreadyWide = ddl.includes('refunded') && ddl.includes('failed');
+    const hasStatusCheck = ddl.includes('status') && ddl.includes('CHECK');
+    if (!ddl || alreadyWide || !hasStatusCheck) {
+      return; // fresh/wide table, or no CHECK to migrate
+    }
+
+    console.log('Migrating payments.status CHECK constraint (SQLite rebuild)...');
+    await run('PRAGMA foreign_keys=OFF');
+    await run('BEGIN TRANSACTION');
+    try {
+      await run(`
+        CREATE TABLE payments_new (
+          id TEXT PRIMARY KEY,
+          user_id INTEGER NOT NULL,
+          amount INTEGER NOT NULL CHECK (amount > 0),
+          method TEXT NOT NULL CHECK (method IN ('card', 'upi', 'cod')),
+          status TEXT NOT NULL CHECK (status IN ('paid', 'pending', 'refunded', 'failed')),
+          provider TEXT NOT NULL DEFAULT 'demo',
+          reference TEXT NOT NULL UNIQUE,
+          metadata TEXT,
+          status_track TEXT DEFAULT 'processing',
+          points_awarded INTEGER DEFAULT 0,
+          deleted_at TIMESTAMP,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await run(`
+        INSERT INTO payments_new (id, user_id, amount, method, status, provider, reference, metadata, status_track, points_awarded, deleted_at, created_at)
+        SELECT id, user_id, amount, method, status, provider, reference, metadata, status_track,
+               COALESCE(points_awarded, 0), deleted_at, created_at
+        FROM payments
+      `);
+      await run('DROP TABLE payments');
+      await run('ALTER TABLE payments_new RENAME TO payments');
+      await run('COMMIT');
+    } catch (err) {
+      await run('ROLLBACK');
+      throw err;
+    } finally {
+      await run('PRAGMA foreign_keys=ON');
+    }
+    console.log('payments.status CHECK constraint widened.');
+  } catch (err) {
+    console.error('Failed to widen payments.status constraint (non-fatal):', err.message);
+  }
 }
 
 async function createCouponsTable() {
@@ -387,6 +463,7 @@ async function createReviewsTable() {
     CREATE TABLE IF NOT EXISTS reviews (
       id SERIAL PRIMARY KEY,
       product_id INTEGER NOT NULL,
+      user_id INTEGER,
       username TEXT NOT NULL,
       rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
       comment TEXT NOT NULL,
@@ -397,9 +474,11 @@ async function createReviewsTable() {
 
   try {
     if (dbType === 'postgres') {
+      await run('ALTER TABLE reviews ADD COLUMN IF NOT EXISTS user_id INTEGER');
       await run('ALTER TABLE reviews ADD COLUMN IF NOT EXISTS image TEXT');
       await run('ALTER TABLE reviews ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP');
     } else {
+      await run('ALTER TABLE reviews ADD COLUMN user_id INTEGER');
       await run('ALTER TABLE reviews ADD COLUMN image TEXT');
     }
   } catch (err) {}
@@ -410,7 +489,16 @@ async function createReviewsTable() {
     }
   } catch (err) {}
 
+  // Ensure user_id exists on older SQLite tables (separate block so a pre-existing
+  // column doesn't skip the other migrations above).
+  try {
+    if (dbType !== 'postgres') {
+      await run('ALTER TABLE reviews ADD COLUMN user_id INTEGER');
+    }
+  } catch (err) {}
+
   await run('CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id)');
+  await run('CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id)');
 }
 
 async function createWishlistTable() {

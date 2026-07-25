@@ -1409,6 +1409,31 @@ app.post('/api/orders/:id/cancel', authenticateUser, asyncHandler(async (req, re
   }
 
   await run('UPDATE payments SET status_track = ? WHERE id = ?', ['cancelled', order.id]);
+
+  // Refund any loyalty points tied to this order:
+  //  - points_redeemed: give back what the user spent for the discount.
+  //  - points_awarded:  claw back points earned (online orders award at placement).
+  const pointsRedeemed = Number(order.points_redeemed || 0);
+  const pointsEarned = order.points_awarded ? Math.floor(Number(order.amount) * 0.1) : 0;
+  const netPointsChange = pointsRedeemed - pointsEarned;
+
+  if (netPointsChange > 0) {
+    await run('UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?', [netPointsChange, userId]);
+  } else if (netPointsChange < 0) {
+    await run('UPDATE users SET points = CASE WHEN COALESCE(points, 0) + ? < 0 THEN 0 ELSE points + ? END WHERE id = ?', [netPointsChange, netPointsChange, userId]);
+  }
+
+  // Mark earned points as reversed so they can't be clawed back twice.
+  if (order.points_awarded) {
+    await run('UPDATE payments SET points_awarded = 0 WHERE id = ?', [order.id]);
+  }
+
+  await run('INSERT INTO audit_logs (action, details, ip) VALUES (?, ?, ?)', [
+    'ORDER_CANCELLED',
+    JSON.stringify({ user_id: userId, payment_id: order.id, points_refunded: pointsRedeemed, points_clawed_back: pointsEarned }),
+    req.ip || 'unknown'
+  ]);
+
   res.json({ message: 'Order cancelled successfully.' });
 }));
 
@@ -1676,6 +1701,7 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
     // Update user points: debit redeemed points, then award earned points.
     if (pointsToDebit > 0) {
       await run('UPDATE users SET points = CASE WHEN COALESCE(points, 0) - ? < 0 THEN 0 ELSE points - ? END WHERE id = ?', [pointsToDebit, pointsToDebit, req.auth.id]);
+      await run('UPDATE payments SET points_redeemed = ? WHERE id = ?', [pointsToDebit, paymentId]);
     }
     const pointsEarned = Math.floor(amount * 0.1);
     await run('UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?', [pointsEarned, req.auth.id]);
@@ -1759,6 +1785,7 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
     // to this order regardless of when the COD payment is collected).
     if (pointsToDebit > 0) {
       await run('UPDATE users SET points = CASE WHEN COALESCE(points, 0) - ? < 0 THEN 0 ELSE points - ? END WHERE id = ?', [pointsToDebit, pointsToDebit, req.auth.id]);
+      await run('UPDATE payments SET points_redeemed = ? WHERE id = ?', [pointsToDebit, paymentId]);
     }
 
     if (metadata && metadata.items && Array.isArray(metadata.items)) {
@@ -1865,16 +1892,17 @@ app.post('/api/reviews', authenticateUser, asyncHandler(async (req, res) => {
   }
 
   // Prevent duplicate reviews for the same product by the same user.
+  // Match on user_id (reliable) OR legacy rows that only have the username.
   const existingReview = await get(
-    'SELECT id FROM reviews WHERE product_id = ? AND username = ?',
-    [finalId, username]
+    'SELECT id FROM reviews WHERE product_id = ? AND (user_id = ? OR (user_id IS NULL AND username = ?))',
+    [finalId, userId, username]
   );
   if (existingReview) {
     res.status(409).json({ message: 'You have already reviewed this product.' });
     return;
   }
 
-  await run('INSERT INTO reviews (product_id, username, rating, comment) VALUES (?, ?, ?, ?)', [finalId, username, ratingVal, comment]);
+  await run('INSERT INTO reviews (product_id, user_id, username, rating, comment) VALUES (?, ?, ?, ?, ?)', [finalId, userId, username, ratingVal, comment]);
 
   res.json({ message: 'Review added successfully' });
 }));

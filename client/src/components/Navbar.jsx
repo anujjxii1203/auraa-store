@@ -16,6 +16,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const { settings } = useStoreSettings();
 
@@ -118,9 +119,9 @@ const Navbar = () => {
           </div>
 
           {/* Live Search Autocomplete */}
-          <div ref={searchRef} style={{ flex: 1, maxWidth: '400px', margin: '0 20px', position: 'relative' }}>
-            <div style={{ display: 'flex', alignItems: 'center', background: 'var(--ss-light-grey)', borderRadius: '20px', padding: '6px 14px', border: '1px solid var(--border-color)' }}>
-              <SearchIcon size={16} color="var(--text-secondary)" style={{ marginRight: '8px' }} />
+          <div ref={searchRef} className={`search-pill-wrapper ${isMobileSearchOpen ? 'mobile-active' : ''}`}>
+            <div style={{ display: 'flex', alignItems: 'center', background: 'var(--ss-light-grey)', borderRadius: '20px', padding: '6px 14px', border: '1px solid var(--border-color)', width: '100%' }}>
+              <SearchIcon size={16} color="var(--text-secondary)" style={{ marginRight: '8px', flexShrink: 0 }} />
               <input
                 type="text"
                 placeholder="Search streetwear, jackets, oversized..."
@@ -130,7 +131,7 @@ const Navbar = () => {
                 style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontSize: '13px', color: 'var(--text-primary)', fontFamily: 'inherit' }}
               />
               {searchQuery && (
-                <X size={14} color="var(--text-secondary)" style={{ cursor: 'pointer' }} onClick={() => { setSearchQuery(''); setSearchResults([]); setShowResults(false); }} />
+                <X size={14} color="var(--text-secondary)" style={{ cursor: 'pointer', flexShrink: 0 }} onClick={() => { setSearchQuery(''); setSearchResults([]); setShowResults(false); }} />
               )}
             </div>
 
@@ -146,7 +147,7 @@ const Navbar = () => {
                       <Link
                         key={item.id}
                         to={`/product/${item.id}`}
-                        onClick={() => setShowResults(false)}
+                        onClick={() => { setShowResults(false); setIsMobileSearchOpen(false); }}
                         style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 15px', textDecoration: 'none', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', transition: '0.2s' }}
                       >
                         <img src={item.image || FALLBACK_IMAGE} alt={item.name} style={{ width: '40px', height: '50px', objectFit: 'cover', borderRadius: '4px', background: '#f0f0f0' }} />
@@ -167,11 +168,21 @@ const Navbar = () => {
 
           {/* Right Icons row */}
           <div className="nav-icons" style={{ color: 'var(--text-primary)' }}>
+            {/* Mobile Search Icon Toggle */}
+            <div 
+              className="mobile-search-btn" 
+              onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)} 
+              title="Search" 
+              style={{ cursor: 'pointer', display: 'none', alignItems: 'center', justifyContent: 'center' }}
+            >
+              {isMobileSearchOpen ? <X size={22} /> : <SearchIcon size={22} strokeWidth={1.5} />}
+            </div>
+
             <Link to={user ? "/profile" : "/login"} title="Account" style={{ color: 'inherit', textDecoration: 'none' }}>
               {user ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1 }}>
-                  <span style={{ fontSize: '10px', fontWeight: '800', color: '#e11b23' }}>HELLO,</span>
-                  <span style={{ fontSize: '11px', fontWeight: '800' }}>{firstName}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <UserIcon size={22} strokeWidth={1.5} />
+                  <span className="hide-mobile" style={{ fontSize: '11px', fontWeight: '800' }}>{firstName}</span>
                 </div>
               ) : (
                 <UserIcon size={24} strokeWidth={1.5} />
