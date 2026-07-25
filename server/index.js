@@ -1535,6 +1535,23 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
       }
     }
 
+    // Server-side amount validation: recompute from DB prices to prevent tampering
+    if (metadata && Array.isArray(metadata.items) && metadata.items.length > 0) {
+      let serverAmount = 0;
+      for (const item of metadata.items) {
+        const product = await get('SELECT price FROM products WHERE id = ? AND deleted_at IS NULL', [item.id]);
+        if (!product) {
+          res.status(400).json({ message: 'Invalid product in order.' });
+          return;
+        }
+        serverAmount += Number(product.price) * Number(item.quantity || 0);
+      }
+      if (Math.abs(serverAmount - Number(amount)) > 1) {
+        res.status(400).json({ message: 'Order amount mismatch. Please refresh your cart and try again.' });
+        return;
+      }
+    }
+
     const paymentId = razorpay_payment_id || `pay_${randomUUID().replace(/-/g, '').slice(0, 18)}`;
     const reference = razorpay_order_id || `AURA-${Date.now()}-${Math.floor(Math.random() * 9000 + 1000)}`;
 
@@ -1591,6 +1608,24 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
     }
 
     const { amount, metadata } = normalized;
+
+    // Server-side amount validation: recompute from DB prices to prevent tampering
+    if (metadata && Array.isArray(metadata.items) && metadata.items.length > 0) {
+      let serverAmount = 0;
+      for (const item of metadata.items) {
+        const product = await get('SELECT price FROM products WHERE id = ? AND deleted_at IS NULL', [item.id]);
+        if (!product) {
+          res.status(400).json({ message: 'Invalid product in order.' });
+          return;
+        }
+        serverAmount += Number(product.price) * Number(item.quantity || 0);
+      }
+      if (Math.abs(serverAmount - Number(amount)) > 1) {
+        res.status(400).json({ message: 'Order amount mismatch. Please refresh your cart and try again.' });
+        return;
+      }
+    }
+
     const paymentId = `pay_${randomUUID().replace(/-/g, '').slice(0, 18)}`;
     const reference = `AURA-${Date.now()}-${Math.floor(Math.random() * 9000 + 1000)}`;
     const status = 'pending';
@@ -1707,6 +1742,15 @@ app.post('/api/returns', authenticateUser, asyncHandler(async (req, res) => {
   await sendReturnEmail(req.auth.email, orderId, productName, reason);
 
   res.json({ message: 'Return request submitted successfully' });
+}));
+
+app.patch('/api/admin/returns/:id/status', authenticateAdmin, requirePermission('manage_orders'), asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  if (!status) {
+    return res.status(400).json({ message: 'Status is required' });
+  }
+  await run('UPDATE returns SET status = ? WHERE id = ?', [status, req.params.id]);
+  res.json({ message: 'Return status updated successfully' });
 }));
 
 // --- REVIEWS ---

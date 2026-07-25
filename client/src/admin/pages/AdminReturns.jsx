@@ -23,6 +23,31 @@ const AdminReturns = () => {
     fetchReturns();
   }, []);
 
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await api.patch(`/admin/returns/${id}/status`, { status: newStatus });
+      fetchReturns(); // refresh the list
+    } catch (err) {
+      console.error('Failed to update return status', err);
+      alert('Failed to update status');
+    }
+  };
+
+  const parseReason = (reasonStr) => {
+    try {
+      const parsed = JSON.parse(reasonStr);
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <strong style={{ color: '#fff' }}>{parsed.returnType?.toUpperCase()}</strong>
+          <span>{parsed.primaryReason}</span>
+          {parsed.details && parsed.details !== 'NA' && <span style={{ fontStyle: 'italic', color: '#888' }}>"{parsed.details}"</span>}
+        </div>
+      );
+    } catch (e) {
+      return reasonStr;
+    }
+  };
+
   const filteredReturns = returns.filter(r => 
     r.order_id.toLowerCase().includes(search.toLowerCase()) || 
     (r.reason || '').toLowerCase().includes(search.toLowerCase())
@@ -72,12 +97,27 @@ const AdminReturns = () => {
                   <span className="sku">{ret.order_id}</span>
                 </td>
                 <td>
-                  <span style={{ fontSize: '13px', color: '#a0a0a0' }}>{ret.reason}</span>
+                  <span style={{ fontSize: '13px', color: '#a0a0a0' }}>{parseReason(ret.reason)}</span>
                 </td>
                 <td>
-                  <span className={`status-badge ${ret.status === 'pending' ? 'warning' : 'success'}`}>
-                    {ret.status}
-                  </span>
+                  <select 
+                    value={ret.status} 
+                    onChange={(e) => handleStatusChange(ret.id, e.target.value)}
+                    className={`status-select ${ret.status === 'pending' ? 'warning' : ret.status === 'rejected' ? 'danger' : 'success'}`}
+                    style={{ 
+                      backgroundColor: 'transparent',
+                      border: '1px solid #333',
+                      color: ret.status === 'pending' ? '#ffc107' : ret.status === 'rejected' ? '#dc3545' : '#28a745',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="pending" style={{ color: '#000' }}>Pending</option>
+                    <option value="approved" style={{ color: '#000' }}>Approved</option>
+                    <option value="completed" style={{ color: '#000' }}>Completed</option>
+                    <option value="rejected" style={{ color: '#000' }}>Rejected</option>
+                  </select>
                 </td>
                 <td>
                   <span style={{ fontSize: '13px', color: '#a0a0a0' }}>
