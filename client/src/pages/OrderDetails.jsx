@@ -18,18 +18,27 @@ const OrderDetails = () => {
   const [reviewProduct, setReviewProduct] = useState(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
+  
+  // States for Return Modal
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [returnProduct, setReturnProduct] = useState(null);
+  const [returnReason, setReturnReason] = useState("");
 
-  const handleReturn = async (item) => {
-    const reason = prompt("Please enter a reason for returning this item:");
-    if (!reason) return;
+  const handleReturnSubmit = async () => {
+    if (!returnReason.trim()) {
+      showToast("Please enter a reason for returning", "error");
+      return;
+    }
     try {
       await api.post('/returns', { 
         orderId: order.id, 
-        productId: item.id || item.product_id, 
-        productName: item.name, 
-        reason 
+        productId: returnProduct.id || returnProduct.product_id, 
+        productName: returnProduct.name, 
+        reason: returnReason 
       });
       showToast("Return request submitted! Our team will contact you shortly.", "success");
+      setReturnModalOpen(false);
+      setReturnReason("");
     } catch(err) {
       showToast("Failed to submit return request", "error");
     }
@@ -277,7 +286,10 @@ const OrderDetails = () => {
                           </button>
                           <button 
                             className="order-action-btn return"
-                            onClick={() => handleReturn(item)}>
+                            onClick={() => {
+                              setReturnProduct(item);
+                              setReturnModalOpen(true);
+                            }}>
                             <RotateCcw size={14} /> RETURN
                           </button>
                         </div>
@@ -382,6 +394,37 @@ const OrderDetails = () => {
                 style={{ padding: '10px 20px', background: 'var(--ss-red)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}
               >
                 Submit Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {returnModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'var(--bg-primary)', padding: '30px', borderRadius: '12px', width: '90%', maxWidth: '500px' }}>
+            <h2 style={{ marginTop: 0, marginBottom: '20px', fontSize: '20px', fontWeight: '800' }}>Return {returnProduct?.name}</h2>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Reason for Return</label>
+              <textarea 
+                value={returnReason}
+                onChange={(e) => setReturnReason(e.target.value)}
+                placeholder="Please explain why you are returning this item..."
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border-color)', minHeight: '100px', resize: 'vertical', fontFamily: 'inherit' }}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
+              <button 
+                onClick={() => setReturnModalOpen(false)}
+                style={{ padding: '10px 20px', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '700' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleReturnSubmit}
+                style={{ padding: '10px 20px', background: 'var(--ss-red)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}
+              >
+                Submit Return
               </button>
             </div>
           </div>
