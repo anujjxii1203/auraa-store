@@ -857,7 +857,7 @@ button:disabled {
       rgba(0, 0, 0, 0.55) 100%);
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
   padding: 52px;
   z-index: 3;
 }
