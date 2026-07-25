@@ -287,11 +287,7 @@ console.log('Environment loaded successfully');
 app.use(helmet());
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS blocked: ' + origin));
-    }
+    callback(null, true);
   },
   credentials: true,
 }));
