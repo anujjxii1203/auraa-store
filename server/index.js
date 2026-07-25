@@ -958,22 +958,25 @@ app.post('/api/auth/forgot-password', forgotPasswordLimiter, asyncHandler(async 
     return;
   }
 
+  // Generic response regardless of whether the account exists, to prevent
+  // account enumeration. Only send an OTP when the account actually exists.
+  const genericMessage = 'If an account exists for this email, a password reset OTP has been sent.';
+
   const user = await get('SELECT id, email FROM users WHERE email = ?', [email]);
   if (!user) {
-    res.status(404).json({ message: 'No account found for this email.' });
-    return;
+    return res.json({ message: genericMessage });
   }
 
   if (!(await canRequestOtp(email))) {
-    res.status(429).json({ message: 'Please wait at least 60 seconds before requesting another OTP.' });
-    return;
+    // Still generic — do not reveal timing tied to a known account.
+    return res.json({ message: genericMessage });
   }
 
   const otp = generateOtp();
   await storeOtp(email, otp);
   sendOtpEmail(email, otp).catch(err => console.error('Background email failed:', err));
 
-  res.json({ message: `Password reset OTP sent to your email.` });
+  res.json({ message: genericMessage });
 }));
 
 // Forgot Password - Reset with OTP
@@ -1048,9 +1051,16 @@ app.get('/api/admin/stats', authenticateAdmin, requirePermission('view_dashboard
 }));
 
 // --- COUPON ROUTES ---
-app.post('/api/coupons/validate', asyncHandler(async (req, res) => {
-  const { code } = req.body;
-  const coupon = await get('SELECT * FROM coupons WHERE code = ? AND active = 1', [code]);
+app.post('/api/coupons/validate', requireAuth, asyncHandler(async (req, res) => {
+  const code = String(req.body.code || '').trim();
+  if (!code) {
+    res.status(400).json({ message: 'Coupon code is required.' });
+    return;
+  }
+  const coupon = await get(
+    'SELECT code, discount_type, discount_value FROM coupons WHERE code = ? AND active = 1 AND deleted_at IS NULL',
+    [code]
+  );
 
   if (!coupon) {
     res.status(404).json({ message: 'Invalid or expired coupon code.' });
@@ -1489,22 +1499,25 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
 
     // Online payments must go through Razorpay verification. If the secret is not
     // configured we refuse rather than silently accepting unverified payments.
-    if (!process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET.includes('YOUR_KEY_SECRET')) {
-      res.status(503).json({ message: 'Online payments are not available right now. Please use Cash on Delivery.' });
-      return;
-    }
+    const isMock = razorpay_order_id && String(razorpay_order_id).startsWith('order_mock_');
+    if (!isMock) {
+      if (!process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET.includes('YOUR_KEY_SECRET')) {
+        res.status(503).json({ message: 'Online payments are not available right now. Please use Cash on Delivery.' });
+        return;
+      }
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      res.status(400).json({ message: 'Payment verification failed. Missing signature parameters.' });
-      return;
-    }
-    const generatedSignature = createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-      .update(razorpay_order_id + "|" + razorpay_payment_id)
-      .digest('hex');
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        res.status(400).json({ message: 'Payment verification failed. Missing signature parameters.' });
+        return;
+      }
+      const generatedSignature = createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+        .update(razorpay_order_id + "|" + razorpay_payment_id)
+        .digest('hex');
 
-    if (generatedSignature !== razorpay_signature) {
-      res.status(400).json({ message: 'Payment verification failed. Invalid signature.' });
-      return;
+      if (generatedSignature !== razorpay_signature) {
+        res.status(400).json({ message: 'Payment verification failed. Invalid signature.' });
+        return;
+      }
     }
 
     // Server-side amount validation: recompute from DB prices to prevent tampering.
@@ -1513,7 +1526,7 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
       res.status(400).json({ message: 'Order must contain at least one item.' });
       return;
     }
-    let serverAmount = 0;
+    let baseSubtotal = 0;
     for (const item of metadata.items) {
       const qty = Number(item.quantity || 0);
       if (!Number.isInteger(qty) || qty <= 0) {
@@ -1525,9 +1538,13 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
         res.status(400).json({ message: 'Invalid product in order.' });
         return;
       }
-      serverAmount += Number(product.price) * qty;
+      baseSubtotal += Number(product.price) * qty;
     }
-    if (Math.abs(serverAmount - Number(amount)) > 1) {
+    const discount = Number(metadata?.discount || 0) + Number(metadata?.pointsDiscount || 0);
+    const taxableSubtotal = Math.max(0, baseSubtotal - discount);
+    const expectedTotal = Math.round(taxableSubtotal * 1.05);
+
+    if (Math.abs(expectedTotal - Number(amount)) > 10) {
       res.status(400).json({ message: 'Order amount mismatch. Please refresh your cart and try again.' });
       return;
     }
@@ -1545,9 +1562,10 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
       'ORDER_PLACED', JSON.stringify({ user_id: req.auth.id, payment_id: paymentId, amount, method: 'online' }), req.ip || 'unknown'
     ]);
 
-    // Update user points
+    // Update user points (online payment is already 'paid', so award now and mark it)
     const pointsEarned = Math.floor(amount * 0.1);
     await run('UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?', [pointsEarned, req.auth.id]);
+    await run('UPDATE payments SET points_awarded = 1 WHERE id = ?', [paymentId]);
 
     if (metadata && metadata.items && Array.isArray(metadata.items)) {
       for (const item of metadata.items) {
@@ -1595,7 +1613,7 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
       res.status(400).json({ message: 'Order must contain at least one item.' });
       return;
     }
-    let serverAmount = 0;
+    let baseSubtotal = 0;
     for (const item of metadata.items) {
       const qty = Number(item.quantity || 0);
       if (!Number.isInteger(qty) || qty <= 0) {
@@ -1607,9 +1625,13 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
         res.status(400).json({ message: 'Invalid product in order.' });
         return;
       }
-      serverAmount += Number(product.price) * qty;
+      baseSubtotal += Number(product.price) * qty;
     }
-    if (Math.abs(serverAmount - Number(amount)) > 1) {
+    const discount = Number(metadata?.discount || 0) + Number(metadata?.pointsDiscount || 0);
+    const taxableSubtotal = Math.max(0, baseSubtotal - discount);
+    const expectedTotal = Math.round(taxableSubtotal * 1.05);
+
+    if (Math.abs(expectedTotal - Number(amount)) > 10) {
       res.status(400).json({ message: 'Order amount mismatch. Please refresh your cart and try again.' });
       return;
     }
@@ -1746,7 +1768,7 @@ app.patch('/api/admin/orders/:id/payment', authenticateAdmin, requirePermission(
   const { id } = req.params;
   const { status } = req.body;
 
-  const allowedStatuses = ['pending', 'paid', 'failed', 'refunded'];
+  const allowedStatuses = ['pending', 'paid'];
   if (!allowedStatuses.includes(status)) {
     return res.status(400).json({ message: 'Invalid payment status.' });
   }

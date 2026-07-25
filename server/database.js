@@ -326,6 +326,16 @@ async function createPaymentsTable() {
     }
   } catch (err) {}
 
+  // Track whether loyalty points have been awarded for this payment (prevents
+  // double-crediting and enables deferring COD points until marked 'paid').
+  try {
+    if (dbType === 'postgres') {
+      await run('ALTER TABLE payments ADD COLUMN IF NOT EXISTS points_awarded INTEGER DEFAULT 0');
+    } else {
+      await run('ALTER TABLE payments ADD COLUMN points_awarded INTEGER DEFAULT 0');
+    }
+  } catch (err) {}
+
   await run('CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id)');
 }
 

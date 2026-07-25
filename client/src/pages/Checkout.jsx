@@ -133,7 +133,7 @@ const Checkout = () => {
       setIsPaying(true);
       try {
         const idempotencyKey = uuidv4();
-        const payload = { amount: finalTotal, method: 'cod', metadata: { items: cart } };
+        const payload = { amount: finalTotal, method: 'cod', metadata: { items: cart, discount: discountAmount, pointsDiscount: pointsDiscount } };
         const response = await api.post('/payments', payload, {
           headers: {
             'Idempotency-Key': idempotencyKey
@@ -184,7 +184,7 @@ const Checkout = () => {
             razorpay_order_id: orderData.id,
             razorpay_payment_id: `pay_mock_${Date.now()}`,
             razorpay_signature: 'mock_signature',
-            metadata: { items: cart }
+            metadata: { items: cart, discount: discountAmount, pointsDiscount: pointsDiscount }
           };
           const verifyResponse = await api.post('/payments', verifyPayload, {
             headers: {
@@ -236,7 +236,7 @@ const Checkout = () => {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              metadata: { items: cart }
+              metadata: { items: cart, discount: discountAmount, pointsDiscount: pointsDiscount }
             };
 
             const verifyResponse = await api.post('/payments', verifyPayload, {
