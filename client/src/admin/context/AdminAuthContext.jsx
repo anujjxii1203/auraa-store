@@ -20,6 +20,13 @@ export const AdminAuthProvider = ({ children }) => {
 
   useEffect(() => {
     fetchAdmin();
+
+    const handleAdminLogout = () => {
+      setAdmin(null);
+    };
+
+    window.addEventListener('admin-logout', handleAdminLogout);
+    return () => window.removeEventListener('admin-logout', handleAdminLogout);
   }, []);
 
   const login = async (email, password) => {

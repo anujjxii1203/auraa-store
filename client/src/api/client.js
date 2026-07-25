@@ -44,6 +44,11 @@ api.interceptors.response.use(
     const nonRefreshEndpoints = ['/auth/login', '/auth/refresh', '/auth/verify-otp', '/auth/request-otp', '/auth/forgot-password', '/auth/reset-password'];
     const isExcluded = nonRefreshEndpoints.some(ep => originalRequest.url.includes(ep));
     if (error.response?.status === 401 && !isExcluded && !originalRequest._retry) {
+      if (originalRequest.url.includes('/admin')) {
+        window.dispatchEvent(new Event('admin-logout'));
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         return new Promise(function(resolve, reject) {
           failedQueue.push({ resolve, reject });
