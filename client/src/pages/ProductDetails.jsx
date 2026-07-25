@@ -235,7 +235,10 @@ const ProductDetails = () => {
                           {[...Array(5)].map((_, i) => <Star key={i} size={12} fill={i < r.rating ? '#ffc107' : 'none'} color={i < r.rating ? '#ffc107' : '#ccc'} />)}
                         </div>
                       </div>
-                      <p style={{ fontSize: '13px', color: '#444', lineHeight: '1.5' }}>{r.comment}</p>
+                      <p style={{ fontSize: '13px', color: '#444', lineHeight: '1.5', marginBottom: '6px' }}>{r.comment}</p>
+                      <p style={{ fontSize: '11px', color: '#999', fontWeight: '600' }}>
+                        {r.created_at ? new Date(r.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : ''}
+                      </p>
                     </div>
                   ))}
                 </div>
