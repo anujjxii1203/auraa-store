@@ -6,7 +6,7 @@ import PageTitle from '../components/PageTitle';
 import { formatPrice, FALLBACK_IMAGE } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const OrderDetails = () => {
   const { id } = useParams();
@@ -188,7 +188,7 @@ const OrderDetails = () => {
       tableRows.push(itemData);
     });
     
-    doc.autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 65,
