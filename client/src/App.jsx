@@ -25,6 +25,7 @@ import Terms from './pages/Terms';
 import Shipping from './pages/Shipping';
 import QA from './pages/QA';
 import Returns from './pages/Returns';
+import OrderDetails from './pages/OrderDetails';
 import ProfileLayout from './components/ProfileLayout';
 import { ToastProvider } from './context/ToastContext';
 import ScrollToTop from './components/ScrollToTop';
@@ -122,6 +123,7 @@ function App() {
                     </Route>
                     <Route path="/login" element={<Login />} />
                     <Route path="/product/:id" element={<ProductDetails />} />
+                    <Route path="/order/:id" element={<OrderDetails />} />
                     <Route path="/track-order" element={<TrackOrder />} />
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/terms" element={<Terms />} />

@@ -108,8 +108,8 @@ const Profile = () => {
                     <div key={order.id} style={{ border: '1.5px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-primary)' }}>
                       <div 
                         className="order-header" 
-                        onClick={() => toggleOrder(order.id)}
-                        style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: expandedOrder === order.id ? 'var(--ss-light-grey)' : 'transparent', cursor: 'pointer' }}
+                        onClick={() => navigate(`/order/${order.reference || order.id}`)}
+                        style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', transition: '0.2s', '&:hover': { background: 'var(--ss-light-grey)' } }}
                       >
                         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                           <div style={{ display: 'flex' }}>
@@ -118,7 +118,7 @@ const Profile = () => {
                             ))}
                           </div>
                           <div>
-                            <p style={{ fontWeight: '900', fontSize: '14px', color: 'var(--text-primary)' }}>ORDER #{order.id}</p>
+                            <p style={{ fontWeight: '900', fontSize: '14px', color: 'var(--text-primary)' }}>ORDER #{order.reference || order.id}</p>
                             <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{order.date}</p>
                           </div>
                         </div>
@@ -127,90 +127,13 @@ const Profile = () => {
                             <p style={{ fontWeight: '900', fontSize: '15px', color: 'var(--text-primary)' }}>{formatPrice(order.total)}</p>
                             <p style={{ fontSize: '11px', color: '#e11b23', fontWeight: '800' }}>{order.status.toUpperCase()}</p>
                           </div>
-                          {expandedOrder === order.id ? <ChevronUp size={20} color="var(--text-secondary)" /> : <ChevronDown size={20} color="var(--text-secondary)" />}
+                          <button style={{ padding: '8px 16px', background: 'var(--text-primary)', color: 'var(--bg-primary)', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}>
+                            VIEW DETAILS
+                          </button>
                         </div>
                       </div>
 
-                      {expandedOrder === order.id && (
-                        <div className="order-details-expanded" style={{ padding: '30px 20px', borderTop: '1px solid var(--border-color)', background: 'var(--bg-primary)' }}>
-                          
-                          {/* Tracking Timeline */}
-                          <div style={{ marginBottom: '40px', padding: '0 20px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginBottom: '10px' }}>
-                              <div style={{ position: 'absolute', top: '12px', left: '0', right: '0', height: '2px', background: 'var(--border-color)', zIndex: 1 }}></div>
-                              <div style={{ 
-                                position: 'absolute', 
-                                top: '12px', 
-                                left: '0', 
-                                width: order.status === 'delivered' ? '100%' : order.status === 'shipped' ? '66%' : '33%', 
-                                height: '2px', 
-                                background: '#008080', 
-                                zIndex: 2,
-                                transition: 'width 0.3s ease'
-                              }}></div>
-                              
-                              <div style={{ position: 'relative', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ width: '24px', height: '24px', background: '#008080', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}><CheckCircle size={14} /></div>
-                                <span style={{ fontSize: '10px', fontWeight: '900', color: '#008080' }}>PLACED</span>
-                              </div>
-                              <div style={{ position: 'relative', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ 
-                                  width: '24px', 
-                                  height: '24px', 
-                                  background: ['processing', 'shipped', 'delivered'].includes(order.status) ? '#008080' : 'var(--border-color)', 
-                                  borderRadius: '50%', 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  justifyContent: 'center', 
-                                  color: ['processing', 'shipped', 'delivered'].includes(order.status) ? 'white' : 'var(--text-secondary)' 
-                                }}><Package size={14} /></div>
-                                <span style={{ fontSize: '10px', fontWeight: '900', color: ['processing', 'shipped', 'delivered'].includes(order.status) ? '#008080' : 'var(--text-secondary)' }}>PROCESSING</span>
-                              </div>
-                              <div style={{ position: 'relative', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ 
-                                  width: '24px', 
-                                  height: '24px', 
-                                  background: ['shipped', 'delivered'].includes(order.status) ? '#008080' : 'var(--border-color)', 
-                                  borderRadius: '50%', 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  justifyContent: 'center', 
-                                  color: ['shipped', 'delivered'].includes(order.status) ? 'white' : 'var(--text-secondary)' 
-                                }}><Truck size={14} /></div>
-                                <span style={{ fontSize: '10px', fontWeight: '900', color: ['shipped', 'delivered'].includes(order.status) ? '#008080' : 'var(--text-secondary)' }}>SHIPPED</span>
-                              </div>
-                              <div style={{ position: 'relative', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ 
-                                  width: '24px', 
-                                  height: '24px', 
-                                  background: order.status === 'delivered' ? '#008080' : 'var(--border-color)', 
-                                  borderRadius: '50%', 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  justifyContent: 'center', 
-                                  color: order.status === 'delivered' ? 'white' : 'var(--text-secondary)' 
-                                }}><Home size={14} /></div>
-                                <span style={{ fontSize: '10px', fontWeight: '900', color: order.status === 'delivered' ? '#008080' : 'var(--text-secondary)' }}>DELIVERED</span>
-                              </div>
-                            </div>
-                          </div>
 
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                            {order.items.map((item, idx) => (
-                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                                  <img src={item.image || FALLBACK_IMAGE} alt={item.name} style={{ width: '45px', height: '55px', objectFit: 'cover', borderRadius: '4px' }} />
-                                  <div>
-                                    <p style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)' }}>{item.name}</p>
-                                    <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Size: {item.selectedSize} | Qty: {item.quantity || 1}</p>
-                                  </div>
-                                </div>
-                                <p style={{ fontSize: '13px', fontWeight: '900', color: 'var(--text-primary)' }}>{formatPrice(item.price)}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
