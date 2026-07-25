@@ -111,7 +111,7 @@ const Profile = () => {
                   <Link to="/" className="btn-red" style={{ padding: '12px 25px', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', display: 'inline-block' }}>START SHOPPING</Link>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxHeight: '600px', overflowY: 'auto', paddingRight: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxHeight: '420px', overflowY: 'scroll', paddingRight: '6px' }}>
                   {orders.map((order) => (
                     <div key={order.id} style={{ border: '1.5px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-primary)' }}>
                       <div 

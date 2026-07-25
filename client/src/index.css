@@ -300,8 +300,24 @@ button:disabled {
 
 .profile-wrapper {
   display: grid;
-  grid-template-columns: 30% 1fr;
+  grid-template-columns: 280px 1fr;
   gap: 40px;
+}
+
+/* Custom scrollbar for the orders list */
+.profile-wrapper div::-webkit-scrollbar {
+  width: 6px;
+}
+.profile-wrapper div::-webkit-scrollbar-track {
+  background: var(--ss-light-grey);
+  border-radius: 10px;
+}
+.profile-wrapper div::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+.profile-wrapper div::-webkit-scrollbar-thumb:hover {
+  background: #999;
 }
 
 @media (max-width: 768px) {
