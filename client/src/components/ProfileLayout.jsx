@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Package, Heart, LogOut, MapPin, Settings as SettingsIcon, MonitorSmartphone, Menu, ChevronDown, User as UserIcon } from 'lucide-react';
+import { Package, Heart, LogOut, MapPin, Settings as SettingsIcon, MonitorSmartphone, Menu, ChevronDown, User as UserIcon, Sparkles } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import api from '../api/client';
 import BackButton from './BackButton';
@@ -41,20 +41,35 @@ const ProfileLayout = () => {
         {/* Sidebar */}
         <div className="profile-sidebar" style={{ background: 'var(--ss-light-grey)', padding: '20px', borderRadius: '12px', height: 'fit-content' }}>
           <div className="profile-sidebar-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', textAlign: 'left' }}>
-              <div className="avatar" style={{ width: '60px', height: '60px', background: '#008080', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: '900', flexShrink: 0 }}>
-                {(user?.username || 'A').charAt(0).toUpperCase()}
-              </div>
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '12px', textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                <div className="avatar" style={{ width: '50px', height: '50px', background: '#008080', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: '900', flexShrink: 0 }}>
+                  {(user?.username || 'A').charAt(0).toUpperCase()}
+                </div>
                 <h2 style={{ fontSize: '18px', fontWeight: '950', color: 'var(--text-primary)', margin: 0, wordBreak: 'break-word' }}>
                   {(user?.username || 'Customer').toUpperCase()}
                 </h2>
+              </div>
 
-                {/* Aligned Aura Points Pill Next to Name */}
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#212121', color: '#fff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '800' }}>
-                  <span style={{ color: '#aaa', letterSpacing: '0.5px' }}>AURA POINTS:</span>
-                  <span style={{ color: '#ff4444', fontWeight: '950', fontSize: '13px' }}>{user?.points || 0}</span>
-                </div>
+              {/* Far-Right Aura Points Icon Pill */}
+              <div 
+                title="Aura Points Balance"
+                style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  background: '#212121', 
+                  color: '#fff', 
+                  padding: '6px 14px', 
+                  borderRadius: '20px', 
+                  fontSize: '12px', 
+                  fontWeight: '900',
+                  marginLeft: 'auto',
+                  flexShrink: 0
+                }}
+              >
+                <Sparkles size={14} color="#ffd700" fill="#ffd700" />
+                <span style={{ color: '#ff4444', fontWeight: '950' }}>{user?.points || 0}</span>
               </div>
             </div>
 
