@@ -74,7 +74,7 @@ const sendWelcomeEmail = async (toEmail, username) => {
       html: `
         <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
           <h2 style="color: #e11b23;">AURA STORE</h2>
-          <h3>Welcome aboard, ${username}!</h3>
+          <h3>Welcome aboard, ${escapeHtml(username)}!</h3>
           <p>We are thrilled to have you here. Your account has been successfully created.</p>
           <p>Get ready to explore our premium streetwear collections and exclusive offers.</p>
           <br/>
@@ -98,11 +98,11 @@ const sendTheftAlertEmail = async (toEmail, username, ip, device, location) => {
       html: `
         <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
           <h2 style="color: #e11b23;">AURA STORE SECURITY</h2>
-          <h3>Hello, ${username}</h3>
+          <h3>Hello, ${escapeHtml(username)}</h3>
           <p>We detected a suspicious attempt to access your account using an old or revoked session token.</p>
-          <p><strong>Device:</strong> ${device}</p>
-          <p><strong>IP Address:</strong> ${ip}</p>
-          <p><strong>Location:</strong> ${location}</p>
+          <p><strong>Device:</strong> ${escapeHtml(device)}</p>
+          <p><strong>IP Address:</strong> ${escapeHtml(ip)}</p>
+          <p><strong>Location:</strong> ${escapeHtml(location)}</p>
           <p>As a precaution, we have logged you out of ALL devices. Please log back in to secure your account. If you did not initiate this, please reset your password immediately.</p>
         </div>
       `,
@@ -139,6 +139,16 @@ const sendPasswordResetEmail = async (toEmail) => {
   }
 };
 
+// Escape user-supplied values before interpolating into email HTML.
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const { generateOtp, sendOtpEmail, storeOtp, verifyOtp, canRequestOtp } = require('./otpHelper');
 const sendOrderEmail = async (email, orderRef, amount, items = []) => {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
@@ -162,12 +172,12 @@ const sendOrderEmail = async (email, orderRef, amount, items = []) => {
           ${items.map(item => `
             <tr>
               <td style="padding: 10px; border-bottom: 1px solid #eee;">
-                <strong>${item.name}</strong><br/>
-                <small>Size: ${item.size} | Color: ${item.color}</small>
+                <strong>${escapeHtml(item.name)}</strong><br/>
+                <small>Size: ${escapeHtml(item.size)} | Color: ${escapeHtml(item.color)}</small>
               </td>
-              <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.quantity}</td>
-              <td style="padding: 10px; border-bottom: 1px solid #eee;">INR ${item.price}</td>
-              <td style="padding: 10px; border-bottom: 1px solid #eee;">INR ${item.price * item.quantity}</td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee;">${escapeHtml(item.quantity)}</td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee;">INR ${escapeHtml(item.price)}</td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee;">INR ${escapeHtml(Number(item.price) * Number(item.quantity))}</td>
             </tr>
           `).join('')}
         </tbody>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useUser } from '../context/UserContext';
 import { useToast } from '../context/ToastContext';
@@ -549,11 +550,20 @@ const Checkout = () => {
                   />
                   <span>Redeem Aura Points ({userPoints} pts)</span>
                 </label>
-                {usePoints && (
-                  <p style={{ margin: '6px 0 0 26px', fontSize: '11px', color: '#008080', fontWeight: '700' }}>
-                    Saves {formatPrice(pointsDiscount)} ({pointsUsed} pts used)
-                  </p>
-                )}
+                <AnimatePresence>
+                  {usePoints && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0, marginTop: 0 }} 
+                      animate={{ opacity: 1, height: 'auto', marginTop: 8 }} 
+                      exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <div style={{ padding: '8px 12px', background: 'rgba(0, 128, 128, 0.08)', border: '1px dashed #008080', borderRadius: '6px', fontSize: '12px', color: '#008080', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>🎉 Aura Points Applied! Total updated: <span style={{ textDecoration: 'line-through', color: '#888', marginLeft: '4px' }}>{formatPrice(Math.round(cartTotal * 1.05))}</span> ➔ <span style={{ color: '#008080', fontWeight: '950', fontSize: '13px' }}>{formatPrice(finalTotal)}</span></span>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             )}
 
@@ -572,9 +582,31 @@ const Checkout = () => {
               <span>{formatPrice(cartTotal * 0.05)}</span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', fontSize: '20px', fontWeight: '950', color: 'var(--ss-red)' }}>
-              <span>TOTAL</span>
-              <span>{formatPrice(finalTotal)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '25px', fontSize: '20px', fontWeight: '950' }}>
+              <span style={{ color: 'var(--text-primary)' }}>TOTAL</span>
+              <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                {(pointsDiscount > 0 || discountAmount > 0) && (
+                  <motion.span 
+                    initial={{ opacity: 0, x: 10 }} 
+                    animate={{ opacity: 1, x: 0 }}
+                    style={{ fontSize: '14px', textDecoration: 'line-through', color: '#888', fontWeight: '700', marginBottom: '-2px' }}
+                  >
+                    {formatPrice(Math.round(cartTotal * 1.05))}
+                  </motion.span>
+                )}
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={finalTotal}
+                    initial={{ scale: 0.8, opacity: 0, y: -5 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.8, opacity: 0, y: 5 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    style={{ color: (pointsDiscount > 0 || discountAmount > 0) ? '#008080' : 'var(--ss-red)', fontSize: '24px', fontWeight: '950' }}
+                  >
+                    {formatPrice(finalTotal)}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
             </div>
 
             <button
