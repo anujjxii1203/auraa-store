@@ -15,6 +15,7 @@ import Profile from './pages/Profile';
 import Wishlist from './pages/Wishlist';
 import Addresses from './pages/Addresses';
 import Settings from './pages/Settings';
+import Sessions from './pages/Sessions';
 import Login from './pages/Login';
 import ProductDetails from './pages/ProductDetails';
 import Preloader from './components/Preloader';
@@ -121,6 +122,7 @@ function App() {
                       <Route path="/profile" element={<Profile />} />
                       <Route path="/wishlist" element={<Wishlist />} />
                       <Route path="/addresses" element={<Addresses />} />
+                      <Route path="/devices" element={<Sessions />} />
                       <Route path="/settings" element={<Settings />} />
                     </Route>
                     <Route path="/login" element={<Login />} />

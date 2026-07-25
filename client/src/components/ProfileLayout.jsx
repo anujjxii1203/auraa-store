@@ -60,6 +60,11 @@ const ProfileLayout = () => {
                 <MapPin size={18} /> ADDRESSES
               </div>
             </Link>
+            <Link to="/devices" style={{ textDecoration: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: path === '/devices' ? 'var(--bg-primary)' : 'transparent', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: path === '/devices' ? '#008080' : 'var(--text-primary)' }}>
+                <MonitorSmartphone size={18} /> LOGGED IN DEVICES
+              </div>
+            </Link>
             <Link to="/settings" style={{ textDecoration: 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: path === '/settings' ? 'var(--bg-primary)' : 'transparent', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: path === '/settings' ? '#008080' : 'var(--text-primary)' }}>
                 <SettingsIcon size={18} /> SETTINGS
