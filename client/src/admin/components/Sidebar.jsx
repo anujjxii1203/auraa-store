@@ -11,7 +11,8 @@ import {
   Image,
   ShieldAlert,
   LogOut,
-  ChevronLeft
+  ChevronLeft,
+  RefreshCw
 } from 'lucide-react';
 import { useAdminAuth } from '../context/AdminAuthContext';
 
@@ -22,6 +23,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard', permission: 'view_dashboard' },
     { name: 'Products', icon: Package, path: '/admin/products', permission: 'manage_products' },
     { name: 'Orders', icon: ShoppingCart, path: '/admin/orders', permission: 'manage_orders' },
+    { name: 'Returns', icon: RefreshCw, path: '/admin/returns', permission: 'manage_orders' },
     { name: 'Customers', icon: Users, path: '/admin/customers', permission: 'manage_users' },
     { name: 'Coupons', icon: Tag, path: '/admin/coupons', permission: 'manage_coupons' },
     { name: 'Reviews', icon: MessageSquare, path: '/admin/reviews', permission: 'manage_products' },

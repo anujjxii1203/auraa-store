@@ -32,6 +32,15 @@ const AdminOrders = () => {
     }
   };
 
+  const handlePaymentStatusChange = async (id, newStatus) => {
+    try {
+      await api.patch(`/admin/orders/${id}/payment`, { status: newStatus });
+      fetchOrders();
+    } catch (err) {
+      console.error('Failed to update payment status', err);
+    }
+  };
+
   const filteredOrders = orders.filter(o => 
     o.id.toString().includes(search) || 
     (o.user_name || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -88,9 +97,21 @@ const AdminOrders = () => {
                 </td>
                 <td>₹{order.amount?.toLocaleString()}</td>
                 <td>
-                  <span className={`status-badge ${order.status === 'paid' ? 'success' : 'pending'}`}>
-                    {order.status}
-                  </span>
+                  {order.status === 'pending' ? (
+                    <select
+                      value={order.status}
+                      onChange={(e) => handlePaymentStatusChange(order.id, e.target.value)}
+                      className="status-badge pending"
+                      style={{ background: 'transparent', border: '1px solid rgba(255, 255, 255, 0.1)', cursor: 'pointer', outline: 'none' }}
+                    >
+                      <option value="pending" style={{ background: '#111' }}>pending</option>
+                      <option value="paid" style={{ background: '#111' }}>paid</option>
+                    </select>
+                  ) : (
+                    <span className={`status-badge success`}>
+                      paid
+                    </span>
+                  )}
                 </td>
                 <td>
                   <span className={`status-badge ${

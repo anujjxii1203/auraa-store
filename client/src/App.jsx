@@ -40,6 +40,7 @@ import AdminLayout from './admin/layouts/AdminLayout';
 import AdminDashboard from './admin/pages/AdminDashboard';
 import AdminProducts from './admin/pages/AdminProducts';
 import AdminOrders from './admin/pages/AdminOrders';
+import AdminReturns from './admin/pages/AdminReturns';
 import AdminCustomers from './admin/pages/AdminCustomers';
 import AdminReviews from './admin/pages/AdminReviews';
 import AdminCoupons from './admin/pages/AdminCoupons';
@@ -98,6 +99,7 @@ function App() {
                       <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="products" element={<AdminProducts />} />
                       <Route path="orders" element={<AdminOrders />} />
+                      <Route path="returns" element={<AdminReturns />} />
                       <Route path="customers" element={<AdminCustomers />} />
                       <Route path="reviews" element={<AdminReviews />} />
                       <Route path="coupons" element={<AdminCoupons />} />
