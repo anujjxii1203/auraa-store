@@ -277,7 +277,7 @@ const OrderDetails = () => {
                 </div>
               </div>
             </div>
-          <div>
+
             <div style={{ background: 'var(--bg-secondary)', padding: '25px', borderRadius: '12px', marginBottom: '20px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: '800', marginBottom: '20px', color: 'var(--text-primary)' }}>PRICE DETAILS</h3>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '14px' }}>
