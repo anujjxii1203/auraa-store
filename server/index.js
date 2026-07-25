@@ -1699,11 +1699,11 @@ app.post('/api/auth/google', asyncHandler(async (req, res) => {
 // --- RETURNS ---
 app.post('/api/returns', authenticateUser, asyncHandler(async (req, res) => {
   const { orderId, productId, productName, reason } = req.body;
-  const userId = req.user.id;
+  const userId = req.auth.id;
   
   await run('INSERT INTO returns (order_id, product_id, user_id, reason, status) VALUES (?, ?, ?, ?, ?)', [orderId, productId, userId, reason, 'pending']);
   
-  await sendReturnEmail(req.user.email, orderId, productName, reason);
+  await sendReturnEmail(req.auth.email, orderId, productName, reason);
   
   res.json({ message: 'Return request submitted successfully' });
 }));
@@ -1711,7 +1711,7 @@ app.post('/api/returns', authenticateUser, asyncHandler(async (req, res) => {
 // --- REVIEWS ---
 app.post('/api/reviews', authenticateUser, asyncHandler(async (req, res) => {
   const { productId, product_id, rating, comment } = req.body;
-  const username = req.user.username || 'Anonymous';
+  const username = req.auth.username || 'Anonymous';
   const finalId = productId || product_id;
   
   await run('INSERT INTO reviews (product_id, username, rating, comment) VALUES (?, ?, ?, ?)', [finalId, username, rating, comment]);
