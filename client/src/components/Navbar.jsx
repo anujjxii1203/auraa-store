@@ -43,22 +43,7 @@ const Navbar = () => {
         <div className="loading-bar" style={{ width: `${loadingProgress}%` }} />
       )}
 
-      {/* Announcement Ticker */}
-      {location.pathname === '/' && settings?.promotional_banner && (
-        <div className="announcement-bar">
-          <div className="ticker-wrapper">
-            <div className="ticker-item">{settings.promotional_banner}</div>
-            <div className="ticker-item">{settings.promotional_banner}</div>
-            <div className="ticker-item">{settings.promotional_banner}</div>
-            <div className="ticker-item">{settings.promotional_banner}</div>
-            <div className="ticker-item">{settings.promotional_banner}</div>
-            <div className="ticker-item">{settings.promotional_banner}</div>
-            <div className="ticker-item">{settings.promotional_banner}</div>
-            <div className="ticker-item">{settings.promotional_banner}</div>
-            <div className="ticker-item">{settings.promotional_banner}</div>
-          </div>
-        </div>
-      )}
+
 
       {/* Main Navbar */}
       <nav className="navbar" style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-primary)' }}>
