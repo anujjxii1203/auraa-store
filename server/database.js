@@ -513,14 +513,15 @@ async function createAdminUsersTable() {
   const existingAdmin = await get('SELECT COUNT(*) as cnt FROM admin_users');
   if (!existingAdmin || parseInt(existingAdmin.cnt, 10) === 0) {
     const bcrypt = require('bcryptjs');
-    const hash = await bcrypt.hash('admin123', 10);
+    const adminPassword = process.env.INITIAL_ADMIN_PASSWORD || 'admin123';
+    const hash = await bcrypt.hash(adminPassword, 10);
     // Role ID 1 is assumed to be Super Admin
     if (dbType === 'postgres') {
       await run('INSERT INTO admin_users (email, password_hash, role_id) VALUES ($1, $2, $3)', ['admin@aurastore.com', hash, 1]);
     } else {
       await run('INSERT INTO admin_users (email, password_hash, role_id) VALUES (?, ?, ?)', ['admin@aurastore.com', hash, 1]);
     }
-    console.log('Default Admin User seeded: admin@aurastore.com / admin123');
+    console.log('Default Admin User seeded: admin@aurastore.com');
   }
 }
 

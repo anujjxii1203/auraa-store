@@ -478,25 +478,6 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', port: PORT });
 });
 
-app.get('/api/debug', asyncHandler(async (req, res) => {
-  try {
-    const result = await all("SELECT column_name, data_type, column_default FROM information_schema.columns WHERE table_name = 'products'");
-    res.json(result);
-  } catch (e) {
-    res.json({ error: e.message });
-  }
-}));
-
-const { _otpStore } = require('./otpHelper');
-app.get('/api/debug/otp', (req, res) => {
-  const email = req.query.email;
-  if (email && _otpStore.has(email)) {
-    res.json({ otp: _otpStore.get(email).otp });
-  } else {
-    res.json({ otps: Array.from(_otpStore.entries()) });
-  }
-});
-
 // --- STOREFRONT PUBLIC SETTINGS ROUTE ---
 app.get('/api/store/settings', asyncHandler(async (req, res) => {
   const settings = await all('SELECT * FROM settings');
@@ -871,8 +852,9 @@ app.post('/api/users/change-password-verify', requireAuth, asyncHandler(async (r
   const { newPassword, otp } = req.body;
   const email = req.auth.email;
 
-  if (!newPassword || newPassword.length < 6) {
-    res.status(400).json({ message: 'New password must be at least 6 characters long.' });
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
+  if (!newPassword || !passwordRegex.test(newPassword)) {
+    res.status(400).json({ message: 'New password must be at least 10 characters long, include uppercase, lowercase, a number, and a special character.' });
     return;
   }
 
@@ -893,7 +875,7 @@ app.post('/api/users/change-password-verify', requireAuth, asyncHandler(async (r
   res.json({ message: 'Password changed successfully.' });
 }));
 // Request OTP after validating credentials
-app.post('/api/auth/request-otp', asyncHandler(async (req, res, next) => {
+app.post('/api/auth/request-otp', otpLimiter, asyncHandler(async (req, res, next) => {
   const email = normalizeEmail(req.body.email);
   const password = String(req.body.password || '');
 
@@ -961,68 +943,6 @@ app.post('/api/auth/verify-otp', asyncHandler(async (req, res, next) => {
   setAuthCookies(res, accessToken, refreshToken, rememberMe);
 
   res.json({ message: 'Login successful.', token: accessToken, user: publicUser(user) });
-}));
-
-// Google Authentication
-app.post('/api/auth/google', asyncHandler(async (req, res) => {
-  const { token, access_token } = req.body;
-  if (!token && !access_token) {
-    res.status(400).json({ message: 'Google token is required.' });
-    return;
-  }
-
-  let payload = null;
-
-  try {
-    if (access_token) {
-      // Handle useGoogleLogin access token
-      const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: `Bearer ${access_token}` },
-      });
-      if (!response.ok) throw new Error('Failed to fetch user info');
-      payload = await response.json();
-    } else {
-      // Handle standard GoogleLogin credential
-      const ticket = await googleClient.verifyIdToken({
-        idToken: token,
-        audience: process.env.VITE_GOOGLE_CLIENT_ID,
-      });
-      payload = ticket.getPayload();
-    }
-  } catch (error) {
-    res.status(401).json({ message: 'Invalid Google token.' });
-    return;
-  }
-
-  if (!payload || !payload.email) {
-    res.status(401).json({ message: 'Invalid Google token payload.' });
-    return;
-  }
-
-  const email = normalizeEmail(payload.email);
-  let user = await get('SELECT * FROM users WHERE email = ?', [email]);
-
-  if (!user) {
-    // Create new user if they don't exist
-    const username = payload.name || email.split('@')[0];
-    const result = await run(
-      'INSERT INTO users (username, email, google_id, role, points) VALUES (?, ?, ?, ?, ?) RETURNING id',
-      [username, email, payload.sub, 'user', 500]
-    );
-    user = await get('SELECT * FROM users WHERE id = ?', [result.lastID || result.id]);
-    if (!user) user = { id: result.lastID, username, email, points: 500, role: 'user' };
-
-    // Send welcome email in background
-    sendWelcomeEmail(email, username).catch(err => console.error('Welcome email failed:', err));
-  } else if (!user.google_id) {
-    // Link google ID to existing account
-    await run('UPDATE users SET google_id = ? WHERE id = ?', [payload.sub, user.id]);
-  }
-
-  const { accessToken, refreshToken } = await generateTokens(user, req, true);
-  setAuthCookies(res, accessToken, refreshToken, true);
-
-  res.json({ message: 'Google login successful.', token: accessToken, user: publicUser(user) });
 }));
 
 // Forgot Password - Request OTP
@@ -1098,7 +1018,7 @@ app.delete('/api/users/me', requireAuth, asyncHandler(async (req, res) => {
   res.json({ message: 'Account deleted successfully from database.' });
 }));
 
-app.get('/api/users', requireAuth, asyncHandler(async (req, res) => {
+app.get('/api/users', authenticateAdmin, requirePermission('manage_users'), asyncHandler(async (req, res) => {
   const users = await all(
     'SELECT id, username, email, created_at FROM users ORDER BY created_at DESC, id DESC',
   );
@@ -1674,50 +1594,6 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
   }
 
   res.status(400).json({ message: 'Unsupported payment method. Use COD, UPI, or Card.' });
-}));
-
-app.post('/api/auth/google', asyncHandler(async (req, res) => {
-  const googleId = String(req.body.googleId || '').trim();
-  const username = String(req.body.name || '').trim();
-  const email = normalizeEmail(req.body.email);
-
-  if (!googleId) {
-    res.status(400).json({ message: 'Google account id is required.' });
-    return;
-  }
-
-  if (!username) {
-    res.status(400).json({ message: 'Google profile name is required.' });
-    return;
-  }
-
-  if (!email || !email.includes('@')) {
-    res.status(400).json({ message: 'Google profile email must be valid.' });
-    return;
-  }
-
-  let user = await get(
-    'SELECT id, username, email, google_id, points FROM users WHERE google_id = ? OR email = ?',
-    [googleId, email],
-  );
-
-  if (user) {
-    if (!user.google_id) {
-      await run('UPDATE users SET google_id = ? WHERE id = ?', [googleId, user.id]);
-    }
-  } else {
-    const result = await run(
-      'INSERT INTO users (username, email, google_id) VALUES (?, ?, ?) RETURNING id',
-      [username, email, googleId],
-    );
-    user = { id: result.lastID, username, email, points: 500 };
-  }
-
-  res.json({
-    message: 'Login successful.',
-    token: signToken(user),
-    user: publicUser(user),
-  });
 }));
 
 // --- RETURNS ---
