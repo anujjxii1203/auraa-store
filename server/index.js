@@ -1264,8 +1264,12 @@ app.get('/api/admin/orders', authenticateAdmin, requirePermission('manage_orders
   res.json(orders);
 }));
 
+const ALLOWED_STATUS_TRACK = ['processing', 'shipped', 'out for delivery', 'delivered', 'cancelled'];
 app.patch('/api/admin/orders/:id', authenticateAdmin, requirePermission('manage_orders'), asyncHandler(async (req, res) => {
-  const { status_track } = req.body;
+  const status_track = String(req.body.status_track || '').trim().toLowerCase();
+  if (!ALLOWED_STATUS_TRACK.includes(status_track)) {
+    return res.status(400).json({ message: `Invalid status. Allowed: ${ALLOWED_STATUS_TRACK.join(', ')}.` });
+  }
   await run('UPDATE payments SET status_track = ? WHERE id = ?', [status_track, req.params.id]);
 
   // Send status update email
@@ -1363,12 +1367,29 @@ app.get('/api/admin/products', authenticateAdmin, requirePermission('manage_prod
 
 app.patch('/api/admin/products/:id', authenticateAdmin, requirePermission('manage_products'), asyncHandler(async (req, res) => {
   const { stock, price } = req.body;
-  if (stock !== undefined && price !== undefined) {
-    await run('UPDATE products SET stock = ?, price = ? WHERE id = ?', [stock, price, req.params.id]);
-  } else if (stock !== undefined) {
-    await run('UPDATE products SET stock = ? WHERE id = ?', [stock, req.params.id]);
-  } else if (price !== undefined) {
-    await run('UPDATE products SET price = ? WHERE id = ?', [price, req.params.id]);
+
+  let stockVal;
+  if (stock !== undefined) {
+    stockVal = Number(stock);
+    if (!Number.isInteger(stockVal) || stockVal < 0) {
+      return res.status(400).json({ message: 'Stock must be a non-negative integer.' });
+    }
+  }
+
+  let priceVal;
+  if (price !== undefined) {
+    priceVal = Number(price);
+    if (!Number.isFinite(priceVal) || priceVal < 0) {
+      return res.status(400).json({ message: 'Price must be a non-negative number.' });
+    }
+  }
+
+  if (stockVal !== undefined && priceVal !== undefined) {
+    await run('UPDATE products SET stock = ?, price = ? WHERE id = ?', [stockVal, priceVal, req.params.id]);
+  } else if (stockVal !== undefined) {
+    await run('UPDATE products SET stock = ? WHERE id = ?', [stockVal, req.params.id]);
+  } else if (priceVal !== undefined) {
+    await run('UPDATE products SET price = ? WHERE id = ?', [priceVal, req.params.id]);
   }
   res.json({ message: 'Product updated successfully' });
 }));
@@ -1549,8 +1570,22 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
       return;
     }
 
-    const paymentId = razorpay_payment_id || `pay_${randomUUID().replace(/-/g, '').slice(0, 18)}`;
-    const reference = razorpay_order_id || `AURA-${Date.now()}-${Math.floor(Math.random() * 9000 + 1000)}`;
+    let paymentId = razorpay_payment_id || `pay_${randomUUID().replace(/-/g, '').slice(0, 18)}`;
+    let reference = razorpay_order_id || `AURA-${Date.now()}-${Math.floor(Math.random() * 9000 + 1000)}`;
+
+    if (String(reference).startsWith('order_mock_') || String(reference).startsWith('pay_mock_')) {
+      reference = `AURA-${Date.now()}-${Math.floor(Math.random() * 9000 + 1000)}`;
+    }
+
+    const existingRef = await get('SELECT id FROM payments WHERE reference = ?', [reference]);
+    if (existingRef) {
+      reference = `AURA-${Date.now()}-${Math.floor(Math.random() * 9000 + 1000)}`;
+    }
+
+    const existingId = await get('SELECT id FROM payments WHERE id = ?', [paymentId]);
+    if (existingId) {
+      paymentId = `pay_${randomUUID().replace(/-/g, '').slice(0, 18)}`;
+    }
 
     await run(
       `INSERT INTO payments (id, user_id, amount, method, status, reference, metadata)
@@ -1752,7 +1787,23 @@ app.post('/api/reviews', authenticateUser, asyncHandler(async (req, res) => {
     return;
   }
 
-  await run('INSERT INTO reviews (product_id, username, rating, comment) VALUES (?, ?, ?, ?)', [finalId, username, rating, comment]);
+  const ratingVal = Number(rating);
+  if (!Number.isInteger(ratingVal) || ratingVal < 1 || ratingVal > 5) {
+    res.status(400).json({ message: 'Rating must be an integer between 1 and 5.' });
+    return;
+  }
+
+  // Prevent duplicate reviews for the same product by the same user.
+  const existingReview = await get(
+    'SELECT id FROM reviews WHERE product_id = ? AND username = ?',
+    [finalId, username]
+  );
+  if (existingReview) {
+    res.status(409).json({ message: 'You have already reviewed this product.' });
+    return;
+  }
+
+  await run('INSERT INTO reviews (product_id, username, rating, comment) VALUES (?, ?, ?, ?)', [finalId, username, ratingVal, comment]);
 
   res.json({ message: 'Review added successfully' });
 }));
