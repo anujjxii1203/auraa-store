@@ -44,6 +44,7 @@ const Navbar = () => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
       setIsSearching(false);
+      setShowResults(false);
       return;
     }
     const timer = setTimeout(async () => {
@@ -129,12 +130,12 @@ const Navbar = () => {
                 style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontSize: '13px', color: 'var(--text-primary)', fontFamily: 'inherit' }}
               />
               {searchQuery && (
-                <X size={14} color="var(--text-secondary)" style={{ cursor: 'pointer' }} onClick={() => { setSearchQuery(''); setSearchResults([]); }} />
+                <X size={14} color="var(--text-secondary)" style={{ cursor: 'pointer' }} onClick={() => { setSearchQuery(''); setSearchResults([]); setShowResults(false); }} />
               )}
             </div>
 
             {/* Live Search Results Dropdown */}
-            {showResults && (
+            {showResults && searchQuery.trim().length > 0 && (
               <div style={{ position: 'absolute', top: '110%', left: 0, right: 0, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.15)', zIndex: 1000, overflow: 'hidden', maxHeight: '380px', overflowY: 'auto' }}>
                 {isSearching ? (
                   <div style={{ padding: '15px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '12px' }}>Searching products...</div>

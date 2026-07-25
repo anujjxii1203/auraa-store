@@ -1589,21 +1589,29 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
 
     const { amount, metadata } = normalized;
 
-    // Server-side amount validation: recompute from DB prices to prevent tampering
-    if (metadata && Array.isArray(metadata.items) && metadata.items.length > 0) {
-      let serverAmount = 0;
-      for (const item of metadata.items) {
-        const product = await get('SELECT price FROM products WHERE id = ? AND deleted_at IS NULL', [item.id]);
-        if (!product) {
-          res.status(400).json({ message: 'Invalid product in order.' });
-          return;
-        }
-        serverAmount += Number(product.price) * Number(item.quantity || 0);
-      }
-      if (Math.abs(serverAmount - Number(amount)) > 1) {
-        res.status(400).json({ message: 'Order amount mismatch. Please refresh your cart and try again.' });
+    // Server-side amount validation: recompute from DB prices to prevent tampering.
+    // Orders MUST contain items so the amount is always derived from DB prices.
+    if (!metadata || !Array.isArray(metadata.items) || metadata.items.length === 0) {
+      res.status(400).json({ message: 'Order must contain at least one item.' });
+      return;
+    }
+    let serverAmount = 0;
+    for (const item of metadata.items) {
+      const qty = Number(item.quantity || 0);
+      if (!Number.isInteger(qty) || qty <= 0) {
+        res.status(400).json({ message: 'Invalid item quantity in order.' });
         return;
       }
+      const product = await get('SELECT price FROM products WHERE id = ? AND deleted_at IS NULL', [item.id]);
+      if (!product) {
+        res.status(400).json({ message: 'Invalid product in order.' });
+        return;
+      }
+      serverAmount += Number(product.price) * qty;
+    }
+    if (Math.abs(serverAmount - Number(amount)) > 1) {
+      res.status(400).json({ message: 'Order amount mismatch. Please refresh your cart and try again.' });
+      return;
     }
 
     const paymentId = `pay_${randomUUID().replace(/-/g, '').slice(0, 18)}`;
@@ -1619,9 +1627,9 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
       'ORDER_PLACED', JSON.stringify({ user_id: req.auth.id, payment_id: paymentId, amount, method: 'cod' }), req.ip || 'unknown'
     ]);
 
-    // Update user points
-    const pointsEarned = Math.floor(amount * 0.1);
-    await run('UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?', [pointsEarned, req.auth.id]);
+    // NOTE: Loyalty points for COD are awarded when the order is marked 'paid'
+    // by an admin (see PATCH /api/admin/orders/:id/payment), not at placement time,
+    // to prevent point farming on orders that are never actually paid.
 
     if (metadata && metadata.items && Array.isArray(metadata.items)) {
       for (const item of metadata.items) {
@@ -1738,9 +1746,26 @@ app.patch('/api/admin/orders/:id/payment', authenticateAdmin, requirePermission(
   const { id } = req.params;
   const { status } = req.body;
 
+  const allowedStatuses = ['pending', 'paid', 'failed', 'refunded'];
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({ message: 'Invalid payment status.' });
+  }
+
+  const order = await get('SELECT id, user_id, amount, status, points_awarded FROM payments WHERE id = ?', [id]);
+  if (!order) {
+    return res.status(404).json({ message: 'Order not found.' });
+  }
+
   // if setting to 'paid', also update status_track to 'processing'
   if (status === 'paid') {
     await run('UPDATE payments SET status = ?, status_track = ? WHERE id = ?', [status, 'processing', id]);
+
+    // Award loyalty points on first transition to 'paid' only (idempotent).
+    if (!order.points_awarded && order.status !== 'paid') {
+      const pointsEarned = Math.floor(Number(order.amount) * 0.1);
+      await run('UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?', [pointsEarned, order.user_id]);
+      await run('UPDATE payments SET points_awarded = 1 WHERE id = ?', [id]);
+    }
   } else {
     await run('UPDATE payments SET status = ? WHERE id = ?', [status, id]);
   }
