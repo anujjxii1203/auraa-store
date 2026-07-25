@@ -68,7 +68,12 @@ const Profile = () => {
 
   return (
     <div className="fk-page-bg">
-      <PageTitle title="My Orders" />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0' }}>
+        <PageTitle title="My Orders" />
+        <button onClick={() => navigate('/settings')} style={{ background: 'transparent', border: 'none', color: '#2874f0', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          Account Settings <ChevronRight size={16} />
+        </button>
+      </div>
       
       {/* Search & Filters */}
       <div className="fk-orders-search-container">
