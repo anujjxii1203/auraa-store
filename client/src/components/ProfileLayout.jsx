@@ -26,9 +26,9 @@ const ProfileLayout = () => {
 
   const getActiveTabName = () => {
     if (path === '/profile') return 'MY ORDERS';
+    if (path === '/about') return 'ABOUT ACCOUNT';
     if (path === '/wishlist') return 'WISHLIST';
     if (path === '/addresses') return 'ADDRESSES';
-    if (path === '/devices') return 'LOGGED IN DEVICES';
     if (path === '/settings') return 'SETTINGS';
     return 'MY ACCOUNT';
   };
@@ -41,17 +41,24 @@ const ProfileLayout = () => {
         {/* Sidebar */}
         <div className="profile-sidebar" style={{ background: 'var(--ss-light-grey)', padding: '20px', borderRadius: '12px', height: 'fit-content' }}>
           <div className="profile-sidebar-header">
-            <div className="avatar" style={{ width: '80px', height: '80px', background: '#008080', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '900', margin: '0 auto 15px' }}>
-              {(user?.username || 'A').charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <h2 style={{ fontSize: '20px', fontWeight: '950', color: 'var(--text-primary)', margin: 0 }}>{(user?.username || 'Customer').toUpperCase()}</h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '4px 0 0 0' }}>{user?.email || ''}</p>
-            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', textAlign: 'left' }}>
+              <div className="avatar" style={{ width: '60px', height: '60px', background: '#008080', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: '900', flexShrink: 0 }}>
+                {(user?.username || 'A').charAt(0).toUpperCase()}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h2 style={{ fontSize: '18px', fontWeight: '950', color: 'var(--text-primary)', margin: 0, wordBreak: 'break-word' }}>
+                  {(user?.username || 'Customer').toUpperCase()}
+                </h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '12px', margin: '2px 0 6px 0', wordBreak: 'break-all' }}>
+                  {user?.email || ''}
+                </p>
 
-            <div className="points-card" style={{ background: '#212121', color: '#fff', margin: '20px 0 10px', padding: '15px', borderRadius: '8px', border: '1px solid #333', textAlign: 'left' }}>
-              <div style={{ fontSize: '11px', color: '#aaa', fontWeight: '800', letterSpacing: '1px', marginBottom: '5px' }}>AURA POINTS</div>
-              <div style={{ fontSize: '24px', fontWeight: '900', color: '#ff4444' }}>{user?.points || 0}</div>
+                {/* Aligned Aura Points Pill */}
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#212121', color: '#fff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '800' }}>
+                  <span style={{ color: '#aaa', letterSpacing: '0.5px' }}>AURA POINTS:</span>
+                  <span style={{ color: '#ff4444', fontWeight: '950', fontSize: '13px' }}>{user?.points || 0}</span>
+                </div>
+              </div>
             </div>
 
             {/* Mobile Hamburger Toggle Bar */}
@@ -82,10 +89,15 @@ const ProfileLayout = () => {
             </button>
           </div>
 
-          <nav className={`profile-sidebar-nav ${isNavOpen ? 'mobile-open' : ''}`} style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <nav className={`profile-sidebar-nav ${isNavOpen ? 'mobile-open' : ''}`} style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '15px' }}>
             <Link to="/profile" onClick={() => setIsNavOpen(false)} style={{ textDecoration: 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: path === '/profile' ? 'var(--bg-primary)' : 'transparent', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: path === '/profile' ? '#008080' : 'var(--text-primary)' }}>
                 <Package size={18} /> MY ORDERS
+              </div>
+            </Link>
+            <Link to="/about" onClick={() => setIsNavOpen(false)} style={{ textDecoration: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: path === '/about' ? 'var(--bg-primary)' : 'transparent', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: path === '/about' ? '#008080' : 'var(--text-primary)' }}>
+                <UserIcon size={18} /> ABOUT ACCOUNT
               </div>
             </Link>
             <Link to="/wishlist" onClick={() => setIsNavOpen(false)} style={{ textDecoration: 'none' }}>
@@ -98,23 +110,11 @@ const ProfileLayout = () => {
                 <MapPin size={18} /> ADDRESSES
               </div>
             </Link>
-            <Link to="/devices" onClick={() => setIsNavOpen(false)} style={{ textDecoration: 'none' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: path === '/devices' ? 'var(--bg-primary)' : 'transparent', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: path === '/devices' ? '#008080' : 'var(--text-primary)' }}>
-                <MonitorSmartphone size={18} /> LOGGED IN DEVICES
-              </div>
-            </Link>
             <Link to="/settings" onClick={() => setIsNavOpen(false)} style={{ textDecoration: 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: path === '/settings' ? 'var(--bg-primary)' : 'transparent', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: path === '/settings' ? '#008080' : 'var(--text-primary)' }}>
                 <SettingsIcon size={18} /> SETTINGS
               </div>
             </Link>
-
-            <div onClick={() => { setIsNavOpen(false); logout(); navigate('/'); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: 'var(--text-primary)', marginTop: '10px', borderTop: '1px solid var(--border-color)' }}>
-              <LogOut size={18} /> LOGOUT
-            </div>
-            <div onClick={() => { setIsNavOpen(false); handleLogoutAll(); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: '#e11b23' }}>
-              <LogOut size={18} /> LOGOUT ALL DEVICES
-            </div>
           </nav>
         </div>
 

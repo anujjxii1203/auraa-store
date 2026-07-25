@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Bell, Shield, Save, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Bell, Shield, Save, Eye, EyeOff, MonitorSmartphone, LogOut, Trash2 } from 'lucide-react';
 import BackButton from '../components/BackButton';
 import PageTitle from '../components/PageTitle';
 import { useUser } from '../context/UserContext';
@@ -25,6 +25,51 @@ const Settings = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
 
+  // Sessions state
+  const [sessions, setSessions] = useState([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+
+  const fetchSessions = async () => {
+    setLoadingSessions(true);
+    try {
+      const res = await api.get('/auth/sessions');
+      setSessions(res.data || []);
+    } catch (err) {
+      console.error('Failed to fetch sessions', err);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'devices') {
+      fetchSessions();
+    }
+  }, [activeTab]);
+
+  const revokeSession = async (id) => {
+    try {
+      await api.delete(`/auth/sessions/${id}`);
+      showToast("Device logged out successfully", "success");
+      fetchSessions();
+    } catch (err) {
+      showToast("Failed to logout device", "error");
+    }
+  };
+
+  const handleLogoutAll = async () => {
+    if (window.confirm("Are you sure you want to log out of all devices?")) {
+      try {
+        await api.post('/api/auth/logout-all');
+      } catch (err) {
+        console.warn("Logout all failed", err);
+      } finally {
+        logout();
+        navigate('/');
+      }
+    }
+  };
+
   const handleUpdateProfile = (e) => {
     e.preventDefault();
     updateUser(localUser);
@@ -34,13 +79,10 @@ const Settings = () => {
   const handleDeleteAccount = async () => {
     try {
       await api.delete('/users/me');
-      
-      // Clear associated local storage data
       if (user?.email) {
         localStorage.removeItem(`orders_${user.email}`);
         localStorage.removeItem(`addresses_${user.email}`);
       }
-      
       logout();
       navigate('/');
       showToast("Account deleted successfully.", "info");
@@ -83,26 +125,32 @@ const Settings = () => {
         <h1 style={{ fontSize: '28px', fontWeight: '950', color: 'var(--text-primary)' }}>ACCOUNT SETTINGS</h1>
       </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '40px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '30px' }}>
         {/* Settings Tabs */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button 
             onClick={() => setActiveTab('profile')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '15px', background: activeTab === 'profile' ? '#f0fcfc' : 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: activeTab === 'profile' ? 'var(--yaperz-green)' : '#555', textAlign: 'left' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', background: activeTab === 'profile' ? '#f0fcfc' : 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: activeTab === 'profile' ? 'var(--yaperz-green)' : '#555', textAlign: 'left' }}
           >
             <User size={18} /> PROFILE
           </button>
           <button 
             onClick={() => setActiveTab('security')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '15px', background: activeTab === 'security' ? '#f0fcfc' : 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: activeTab === 'security' ? 'var(--yaperz-green)' : '#555', textAlign: 'left' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', background: activeTab === 'security' ? '#f0fcfc' : 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: activeTab === 'security' ? 'var(--yaperz-green)' : '#555', textAlign: 'left' }}
           >
-            <Shield size={18} /> SECURITY
+            <Shield size={18} /> SECURITY & PASSWORD
           </button>
           <button 
-            onClick={() => setActiveTab('notifications')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '15px', background: activeTab === 'notifications' ? '#f0fcfc' : 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: activeTab === 'notifications' ? 'var(--yaperz-green)' : '#555', textAlign: 'left' }}
+            onClick={() => setActiveTab('devices')}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', background: activeTab === 'devices' ? '#f0fcfc' : 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: activeTab === 'devices' ? 'var(--yaperz-green)' : '#555', textAlign: 'left' }}
           >
-            <Bell size={18} /> NOTIFICATIONS
+            <MonitorSmartphone size={18} /> LOGGED IN DEVICES
+          </button>
+          <button 
+            onClick={() => setActiveTab('account-actions')}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', background: activeTab === 'account-actions' ? '#fff0f0' : 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: activeTab === 'account-actions' ? '#e11b23' : '#555', textAlign: 'left' }}
+          >
+            <LogOut size={18} /> LOGOUT OPTIONS
           </button>
         </div>
 
@@ -190,10 +238,6 @@ const Settings = () => {
                 </div>
               )}
 
-              <button type="submit" className="btn-red" style={{ padding: '12px 30px', borderRadius: '6px', fontSize: '14px' }}>
-                {otpSent ? 'VERIFY OTP & UPDATE' : 'SEND OTP'}
-              </button>
-              
               <div style={{ marginTop: '40px', paddingTop: '30px', borderTop: '1px solid #eee' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#e11b23', marginBottom: '10px' }}>DANGER ZONE</h3>
                 <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px' }}>Once you delete your account, there is no going back. Please be certain.</p>
@@ -203,24 +247,70 @@ const Settings = () => {
               </div>
             </form>
           )}
-
-          {activeTab === 'notifications' && (
+          {activeTab === 'devices' && (
             <div>
-              <h2 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '25px' }}>NOTIFICATION PREFERENCES</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {[
-                  { title: 'Email Notifications', desc: 'Receive order updates and promotions via email.' },
-                  { title: 'SMS Alerts', desc: 'Get real-time delivery tracking on your phone.' },
-                  { title: 'New Drops', desc: 'Be the first to know about upcoming urban collections.' }
-                ].map((item, idx) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', background: 'white', borderRadius: '8px', border: '1px solid #eee' }}>
-                    <div>
-                      <p style={{ fontWeight: '800', fontSize: '14px' }}>{item.title}</p>
-                      <p style={{ fontSize: '12px', color: '#888' }}>{item.desc}</p>
+              <h2 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '10px' }}>LOGGED IN DEVICES</h2>
+              <p style={{ fontSize: '13px', color: '#666', marginBottom: '25px' }}>Active sessions currently logged into your account.</p>
+
+              {loadingSessions ? (
+                <p style={{ fontSize: '13px', color: '#888' }}>Loading devices...</p>
+              ) : sessions.length === 0 ? (
+                <p style={{ fontSize: '13px', color: '#888' }}>No active devices found.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  {sessions.map((session) => (
+                    <div key={session.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #eee', flexWrap: 'wrap', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <MonitorSmartphone size={20} color="#008080" />
+                        <div>
+                          <p style={{ fontSize: '14px', fontWeight: '800', margin: 0 }}>
+                            {session.device_name || 'Unknown Device'} - {session.browser || 'Browser'}
+                            {session.isCurrent && <span style={{ marginLeft: '8px', fontSize: '10px', background: '#008080', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>This Device</span>}
+                          </p>
+                          <p style={{ fontSize: '11px', color: '#888', margin: '2px 0 0 0' }}>
+                            {session.os || ''} • {session.country || 'Location N/A'}
+                          </p>
+                        </div>
+                      </div>
+                      {!session.isCurrent && (
+                        <button onClick={() => revokeSession(session.id)} style={{ padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '800', background: 'transparent', border: '1px solid #e11b23', color: '#e11b23', cursor: 'pointer' }}>
+                          LOGOUT
+                        </button>
+                      )}
                     </div>
-                    <input type="checkbox" defaultChecked style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
+                  ))}
+
+                  <div style={{ marginTop: '20px' }}>
+                    <button onClick={handleLogoutAll} style={{ padding: '10px 20px', background: '#e11b23', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <LogOut size={16} /> LOGOUT ALL OTHER DEVICES
+                    </button>
                   </div>
-                ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'account-actions' && (
+            <div>
+              <h2 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '10px' }}>LOGOUT OPTIONS</h2>
+              <p style={{ fontSize: '13px', color: '#666', marginBottom: '25px' }}>Manage your active login sessions and sign out securely.</p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxWidth: '400px' }}>
+                <div style={{ padding: '20px', background: 'white', borderRadius: '10px', border: '1px solid #eee' }}>
+                  <h4 style={{ margin: '0 0 6px 0', fontSize: '15px', fontWeight: '900' }}>Logout This Device</h4>
+                  <p style={{ margin: '0 0 15px 0', fontSize: '12px', color: '#666' }}>Sign out of Aura Store on this browser session.</p>
+                  <button onClick={() => { logout(); navigate('/'); }} style={{ width: '100%', padding: '12px', background: 'var(--text-primary)', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <LogOut size={16} /> LOGOUT THIS DEVICE
+                  </button>
+                </div>
+
+                <div style={{ padding: '20px', background: '#fff0f0', borderRadius: '10px', border: '1px solid #ffcdd2' }}>
+                  <h4 style={{ margin: '0 0 6px 0', fontSize: '15px', fontWeight: '900', color: '#e11b23' }}>Logout All Devices</h4>
+                  <p style={{ margin: '0 0 15px 0', fontSize: '12px', color: '#666' }}>Terminate all logged-in sessions across all browsers and devices.</p>
+                  <button onClick={handleLogoutAll} style={{ width: '100%', padding: '12px', background: '#e11b23', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <LogOut size={16} /> LOGOUT ALL DEVICES
+                  </button>
+                </div>
               </div>
             </div>
           )}

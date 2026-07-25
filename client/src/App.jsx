@@ -12,6 +12,7 @@ import Drops from './pages/Drops';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Profile from './pages/Profile';
+import AboutUser from './pages/AboutUser';
 import Wishlist from './pages/Wishlist';
 import Addresses from './pages/Addresses';
 import Settings from './pages/Settings';
@@ -120,6 +121,7 @@ function App() {
                     <Route path="/checkout" element={<Checkout />} />
                     <Route element={<ProfileLayout />}>
                       <Route path="/profile" element={<Profile />} />
+                      <Route path="/about" element={<AboutUser />} />
                       <Route path="/wishlist" element={<Wishlist />} />
                       <Route path="/addresses" element={<Addresses />} />
                       <Route path="/devices" element={<Sessions />} />
