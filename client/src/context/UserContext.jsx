@@ -59,7 +59,7 @@ export const UserProvider = ({ children }) => {
     // Sync session on mount
     const syncSession = async () => {
       try {
-        const { data } = await api.get('/api/me');
+        const { data } = await api.get('/me');
         setUser(data.user);
         localStorage.setItem('user', JSON.stringify(data.user));
       } catch (err) {

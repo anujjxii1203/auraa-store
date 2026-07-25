@@ -138,7 +138,7 @@ const Checkout = () => {
         triggerConfetti();
 
         try {
-          const meRes = await api.get('/api/me');
+          const meRes = await api.get('/me');
           updateUser(meRes.data.user);
         } catch(e) {}
 
@@ -190,7 +190,7 @@ const Checkout = () => {
           triggerConfetti();
 
           try {
-            const meRes = await api.get('/api/me');
+            const meRes = await api.get('/me');
             updateUser(meRes.data.user);
           } catch(e) {}
 
@@ -241,7 +241,7 @@ const Checkout = () => {
             saveOrder(verifyResponse.data.payment);
             setIsOrdered(true);
             try {
-              const meRes = await api.get('/api/me');
+              const meRes = await api.get('/me');
               updateUser(meRes.data.user);
             } catch(e) {}
             triggerConfetti();
