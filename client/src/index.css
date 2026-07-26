@@ -2351,3 +2351,38 @@ button:disabled {
   box-shadow: 0 4px 12px rgba(225, 27, 35, 0.2);
   transform: translateY(-2px);
 }
+
+/* =========================================
+   ADMIN PORTAL MOBILE RESPONSIVENESS
+   ========================================= */
+.admin-mobile-header {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .admin-mobile-header {
+    display: flex !important;
+  }
+  
+  .hide-mobile-refresh {
+    display: none !important;
+  }
+
+  .admin-stats-sidebar {
+    position: fixed !important;
+    top: 55px !important;
+    left: -280px !important;
+    bottom: 0 !important;
+    z-index: 1000 !important;
+    transition: left 0.3s ease !important;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.5) !important;
+  }
+
+  .admin-stats-sidebar.mobile-visible {
+    left: 0 !important;
+  }
+
+  .admin-stats-main {
+    padding: 20px 12px !important;
+  }
+}

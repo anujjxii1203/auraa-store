@@ -152,20 +152,19 @@ const AdminStats = () => {
   if (error) return (
     <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', background: '#f5f7f9' }}>
       <h2 style={{ color: '#e11b23', fontWeight: '900', marginBottom: '20px' }}>ERROR: {error}</h2>
-      <button onClick={fetchStats} className="btn-red" style={{ padding: '12px 25px', borderRadius: '6px' }}>TRY AGAIN</button>
+      <button onClick={fetchStats} style={{ padding: '12px 25px', borderRadius: '6px', background: '#e11b23', color: 'white', border: 'none', cursor: 'pointer' }}>TRY AGAIN</button>
     </div>
   );
-  if (!data) return null;
 
-  // Calculate totals
-  const totalRevenue = data.payments.reduce((acc, curr) => curr.status === 'paid' ? acc + curr.amount : acc, 0);
+  const totalRevenue = data.payments.filter(p => p.status === 'paid').reduce((acc, curr) => acc + Number(curr.amount), 0);
   const totalOrders = data.payments.length;
 
   const NavItem = ({ id, icon: Icon, label }) => (
     <div 
-      onClick={() => setActiveTab(id)}
-      style={{ 
-        display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 20px', 
+      onClick={() => { setActiveTab(id); setIsMobileOpen(false); }}
+      style={{
+        display: 'flex', alignItems: 'center', gap: '12px',
+        padding: '14px 20px',
         background: activeTab === id ? '#e11b23' : 'transparent',
         color: activeTab === id ? 'white' : '#888',
         borderRadius: '8px', cursor: 'pointer', fontWeight: '800', fontSize: '13px',
@@ -177,47 +176,101 @@ const AdminStats = () => {
   );
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f7f9', fontFamily: 'system-ui' }}>
+    <div className="admin-stats-wrapper" style={{ minHeight: '100vh', background: '#f5f7f9', fontFamily: 'system-ui', position: 'relative' }}>
       
-      {/* Sidebar */}
-      <div style={{ width: '280px', background: '#111', color: 'white', padding: '30px 20px', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '50px', padding: '0 10px' }}>
-          <div style={{ width: '40px', height: '40px', background: '#e11b23', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Database size={20} color="white" />
-          </div>
-          <div>
-            <h2 style={{ fontSize: '18px', fontWeight: '950', margin: 0, letterSpacing: '-0.5px' }}>AURA ADMIN</h2>
-            <p style={{ fontSize: '11px', color: '#888', margin: 0, fontWeight: '700' }}>Control Panel v1.0</p>
+      {/* Mobile Top Header */}
+      <div className="admin-mobile-header" style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '15px 20px',
+        background: '#111',
+        color: 'white',
+        position: 'sticky',
+        top: 0,
+        zIndex: 900
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button 
+            onClick={() => setIsMobileOpen(!isMobileOpen)}
+            style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+          >
+            {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+          <div style={{ fontWeight: '950', fontSize: '16px', letterSpacing: '-0.5px', color: '#fff' }}>
+            AURA ADMIN
           </div>
         </div>
 
-        <nav style={{ flex: 1 }}>
-          <NavItem id="dashboard" icon={LayoutDashboard} label="DASHBOARD" />
-          <NavItem id="orders" icon={CreditCard} label="ORDERS" />
-          <NavItem id="returns" icon={RefreshCw} label="RETURNS" />
-          <NavItem id="products" icon={Package} label="PRODUCTS" />
-          <NavItem id="users" icon={Users} label="CUSTOMERS" />
-          <NavItem id="coupons" icon={Ticket} label="COUPONS" />
-        </nav>
-
-        <div 
-          onClick={() => { logout(); setIsAuthorized(false); navigate('/login'); }}
-          style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 20px', color: '#ff4444', cursor: 'pointer', fontWeight: '800', fontSize: '13px', borderTop: '1px solid #333', marginTop: '20px' }}
-        >
-          <LogOut size={18} /> LOGOUT
-        </div>
+        <button onClick={fetchStats} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <RefreshCw size={14} /> Refresh
+        </button>
       </div>
 
-      {/* Main Content Area */}
-      <div style={{ flex: 1, padding: '40px 50px', overflowY: 'auto', height: '100vh' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#111', letterSpacing: '-1px' }}>
-            {activeTab.toUpperCase()}
-          </h1>
-          <button onClick={fetchStats} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'white', border: '1.5px solid #eee', borderRadius: '8px', fontWeight: '800', cursor: 'pointer', color: '#111', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
-            <RefreshCw size={16} /> REFRESH DATA
-          </button>
+      <div style={{ display: 'flex', minHeight: 'calc(100vh - 60px)' }}>
+        {/* Mobile Backdrop Overlay */}
+        {isMobileOpen && (
+          <div 
+            onClick={() => setIsMobileOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 990 }}
+          />
+        )}
+
+        {/* Sidebar */}
+        <div 
+          style={{
+            width: '260px',
+            background: '#111',
+            color: 'white',
+            padding: '30px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            flexShrink: 0,
+            position: 'fixed',
+            top: '60px',
+            bottom: 0,
+            left: isMobileOpen ? 0 : '-260px',
+            zIndex: 995,
+            transition: 'left 0.3s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px', padding: '0 10px' }}>
+            <div style={{ width: '38px', height: '38px', background: '#e11b23', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Database size={20} color="white" />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: '950', margin: 0, letterSpacing: '-0.5px' }}>AURA ADMIN</h2>
+              <p style={{ fontSize: '11px', color: '#888', margin: 0, fontWeight: '700' }}>Control Panel v1.0</p>
+            </div>
+          </div>
+
+          <nav style={{ flex: 1 }}>
+            <NavItem id="dashboard" icon={LayoutDashboard} label="DASHBOARD" />
+            <NavItem id="orders" icon={CreditCard} label="ORDERS" />
+            <NavItem id="returns" icon={RefreshCw} label="RETURNS" />
+            <NavItem id="products" icon={Package} label="PRODUCTS" />
+            <NavItem id="users" icon={Users} label="CUSTOMERS" />
+            <NavItem id="coupons" icon={Ticket} label="COUPONS" />
+          </nav>
+
+          <div 
+            onClick={() => { logout(); setIsAuthorized(false); navigate('/login'); }}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 20px', color: '#ff4444', cursor: 'pointer', fontWeight: '800', fontSize: '13px', borderTop: '1px solid #333', marginTop: '20px' }}
+          >
+            <LogOut size={18} /> LOGOUT
+          </div>
         </div>
+
+        {/* Main Content Area */}
+        <div style={{ flex: 1, padding: '30px 20px', overflowY: 'auto', minWidth: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '15px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: '950', color: '#111', letterSpacing: '-1px', margin: 0 }}>
+              {activeTab.toUpperCase()}
+            </h1>
+            <button onClick={fetchStats} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'white', border: '1.5px solid #eee', borderRadius: '8px', fontWeight: '800', cursor: 'pointer', color: '#111', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+              <RefreshCw size={16} /> REFRESH DATA
+            </button>
+          </div>
 
         {/* --- DASHBOARD TAB --- */}
         {activeTab === 'dashboard' && (
@@ -257,8 +310,8 @@ const AdminStats = () => {
 
         {/* --- ORDERS TAB --- */}
         {activeTab === 'orders' && (
-          <div style={{ background: 'white', borderRadius: '16px', border: '1.5px solid #eee', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <div style={{ background: 'white', borderRadius: '16px', border: '1.5px solid #eee', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table style={{ width: '100%', minWidth: '650px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead style={{ background: '#f8f9fa' }}>
                 <tr style={{ textAlign: 'left' }}>
                   <th style={{ padding: '20px', color: '#888', fontWeight: '800' }}>ORDER ID</th>
@@ -310,8 +363,8 @@ const AdminStats = () => {
 
         {/* --- RETURNS TAB --- */}
         {activeTab === 'returns' && (
-          <div style={{ background: 'white', borderRadius: '16px', border: '1.5px solid #eee', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <div style={{ background: 'white', borderRadius: '16px', border: '1.5px solid #eee', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead style={{ background: '#f8f9fa' }}>
                 <tr style={{ textAlign: 'left' }}>
                   <th style={{ padding: '20px', color: '#888', fontWeight: '800' }}>RETURN ID</th>
@@ -351,8 +404,8 @@ const AdminStats = () => {
               <button onClick={() => setShowAddProductModal(true)} style={{ background: '#111', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '900', cursor: 'pointer', fontSize: '13px' }}>+ ADD PRODUCT</button>
             </div>
             
-            <div style={{ background: 'white', borderRadius: '16px', border: '1.5px solid #eee', overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+            <div style={{ background: 'white', borderRadius: '16px', border: '1.5px solid #eee', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ width: '100%', minWidth: '650px', borderCollapse: 'collapse', fontSize: '14px' }}>
                 <thead style={{ background: '#f8f9fa' }}>
                   <tr style={{ textAlign: 'left' }}>
                     <th style={{ padding: '20px', color: '#888', fontWeight: '800' }}>PRODUCT NAME</th>
@@ -424,8 +477,8 @@ const AdminStats = () => {
 
         {/* --- USERS TAB --- */}
         {activeTab === 'users' && (
-          <div style={{ background: 'white', borderRadius: '16px', border: '1.5px solid #eee', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+          <div style={{ background: 'white', borderRadius: '16px', border: '1.5px solid #eee', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table style={{ width: '100%', minWidth: '680px', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead style={{ background: '#f8f9fa' }}>
                 <tr style={{ textAlign: 'left' }}>
                   <th style={{ padding: '20px', color: '#888', fontWeight: '800' }}>USER ID</th>
@@ -466,8 +519,8 @@ const AdminStats = () => {
                 <h3 style={{ color: '#888' }}>No active coupons found.</h3>
               </div>
             ) : (
-              <div style={{ background: 'white', borderRadius: '16px', border: '1.5px solid #eee', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+              <div style={{ background: 'white', borderRadius: '16px', border: '1.5px solid #eee', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <table style={{ width: '100%', minWidth: '450px', borderCollapse: 'collapse', fontSize: '14px' }}>
                   <thead style={{ background: '#f8f9fa' }}>
                     <tr style={{ textAlign: 'left' }}>
                       <th style={{ padding: '20px', color: '#888', fontWeight: '800' }}>CODE</th>
@@ -494,7 +547,8 @@ const AdminStats = () => {
       </div>
 
     </div>
-  );
+  </div>
+);
 };
 
 export default AdminStats;
