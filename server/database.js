@@ -320,7 +320,7 @@ async function createPaymentsTable() {
       id TEXT PRIMARY KEY,
       user_id INTEGER NOT NULL,
       amount INTEGER NOT NULL CHECK (amount > 0),
-      method TEXT NOT NULL CHECK (method IN ('card', 'upi', 'cod')),
+      method TEXT NOT NULL CHECK (method IN ('card', 'upi', 'cod', 'wallet')),
       status TEXT NOT NULL CHECK (status IN ('paid', 'pending', 'refunded', 'failed')),
       provider TEXT NOT NULL DEFAULT 'demo',
       reference TEXT NOT NULL UNIQUE,
@@ -370,19 +370,22 @@ async function createPaymentsTable() {
 
   // Widen the status CHECK constraint on pre-existing tables so admins can mark
   // orders 'refunded'/'failed'. New DBs already get the wide constraint above.
-  await widenPaymentsStatusConstraint();
+  await widenPaymentsConstraints();
 
   await run('CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id)');
 }
 
 // Migrate an existing payments table whose status CHECK only allows
 // ('paid','pending') to also allow ('refunded','failed').
-async function widenPaymentsStatusConstraint() {
+async function widenPaymentsConstraints() {
   try {
     if (dbType === 'postgres') {
       // Drop the auto-named check constraint if present, then re-add the wide one.
       await run('ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_status_check');
       await run("ALTER TABLE payments ADD CONSTRAINT payments_status_check CHECK (status IN ('paid', 'pending', 'refunded', 'failed'))");
+      
+      await run('ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_method_check');
+      await run("ALTER TABLE payments ADD CONSTRAINT payments_method_check CHECK (method IN ('card', 'upi', 'cod', 'wallet'))");
       return;
     }
 
@@ -390,7 +393,7 @@ async function widenPaymentsStatusConstraint() {
     // old (narrow) constraint is actually present, to avoid needless churn.
     const row = await get("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'payments'");
     const ddl = row && row.sql ? String(row.sql) : '';
-    const alreadyWide = ddl.includes('refunded') && ddl.includes('failed');
+    const alreadyWide = ddl.includes('refunded') && ddl.includes('failed') && ddl.includes('wallet');
     const hasStatusCheck = ddl.includes('status') && ddl.includes('CHECK');
     if (!ddl || alreadyWide || !hasStatusCheck) {
       return; // fresh/wide table, or no CHECK to migrate
@@ -405,7 +408,7 @@ async function widenPaymentsStatusConstraint() {
           id TEXT PRIMARY KEY,
           user_id INTEGER NOT NULL,
           amount INTEGER NOT NULL CHECK (amount > 0),
-          method TEXT NOT NULL CHECK (method IN ('card', 'upi', 'cod')),
+          method TEXT NOT NULL CHECK (method IN ('card', 'upi', 'cod', 'wallet')),
           status TEXT NOT NULL CHECK (status IN ('paid', 'pending', 'refunded', 'failed')),
           provider TEXT NOT NULL DEFAULT 'demo',
           reference TEXT NOT NULL UNIQUE,
@@ -431,9 +434,9 @@ async function widenPaymentsStatusConstraint() {
     } finally {
       await run('PRAGMA foreign_keys=ON');
     }
-    console.log('payments.status CHECK constraint widened.');
+    console.log('payments.status and payments.method CHECK constraints widened.');
   } catch (err) {
-    console.error('Failed to widen payments.status constraint (non-fatal):', err.message);
+    console.error('Failed to widen payments constraint (non-fatal):', err.message);
   }
 }
 
