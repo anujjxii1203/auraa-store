@@ -83,7 +83,7 @@ const AuraWallet = () => {
           email: user.email,
         },
         theme: {
-          color: '#00ff88',
+          color: '#2b1be1',
         },
       };
 
@@ -119,7 +119,7 @@ const AuraWallet = () => {
   if (isLoading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: '50px 0' }}>
-        <LoaderCircle size={40} color="#00ff88" style={{ animation: 'spin 1s linear infinite' }} />
+        <LoaderCircle size={40} color="#008080" style={{ animation: 'spin 1s linear infinite' }} />
       </div>
     );
   }
@@ -130,15 +130,15 @@ const AuraWallet = () => {
       {/* Balance Card */}
       <div style={{ background: '#212121', padding: '30px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '15px', color: 'white', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '-20px', right: '-20px', opacity: 0.1 }}>
-          <Wallet size={150} color="#00ff88" />
+          <Wallet size={150} color="#008080" />
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Wallet size={24} color="#00ff88" />
+          <Wallet size={24} color="#008080" />
           <h2 style={{ fontSize: '16px', fontWeight: '800', margin: 0, letterSpacing: '1px', color: '#ccc' }}>AURA WALLET BALANCE</h2>
         </div>
         
-        <div style={{ fontSize: '48px', fontWeight: '950', color: '#00ff88', display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+        <div style={{ fontSize: '48px', fontWeight: '950', color: '#008080', display: 'flex', alignItems: 'baseline', gap: '5px' }}>
           <span style={{ fontSize: '24px' }}>₹</span>{balance.toLocaleString()}
         </div>
       </div>
@@ -174,8 +174,8 @@ const AuraWallet = () => {
             disabled={isAdding}
             style={{
               padding: '12px 25px',
-              background: '#00ff88',
-              color: '#000',
+              background: '#008080',
+              color: '#fff',
               border: 'none',
               borderRadius: '8px',
               fontWeight: '900',
@@ -208,15 +208,15 @@ const AuraWallet = () => {
             {transactions.map(tx => (
               <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', background: 'var(--bg-secondary)', borderRadius: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: tx.type === 'credit' ? '#e6ffe6' : '#ffe6e6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {tx.type === 'credit' ? <TrendingUp size={20} color="#00cc66" /> : <TrendingDown size={20} color="#e11b23" />}
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: tx.type === 'credit' ? '#e6f2f2' : '#ffe6e6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {tx.type === 'credit' ? <TrendingUp size={20} color="#008080" /> : <TrendingDown size={20} color="#e11b23" />}
                   </div>
                   <div>
                     <h4 style={{ margin: '0 0 5px 0', fontSize: '15px', fontWeight: '800' }}>{tx.description}</h4>
                     <p style={{ margin: 0, fontSize: '12px', color: '#888', fontWeight: '600' }}>{new Date(tx.created_at).toLocaleString()}</p>
                   </div>
                 </div>
-                <div style={{ fontSize: '16px', fontWeight: '900', color: tx.type === 'credit' ? '#00cc66' : 'var(--text-primary)' }}>
+                <div style={{ fontSize: '16px', fontWeight: '900', color: tx.type === 'credit' ? '#008080' : 'var(--text-primary)' }}>
                   {tx.type === 'credit' ? '+' : '-'}₹{tx.amount.toLocaleString()}
                 </div>
               </div>

@@ -478,7 +478,7 @@ const Checkout = () => {
             )}
 
             {paymentMethod === 'wallet' && (
-              <div style={{ background: 'var(--ss-light-grey)', border: '1.5px solid #00ff88', borderRadius: '12px', padding: '18px', marginBottom: '18px', color: '#00cc66', fontSize: '13px', fontWeight: '700' }}>
+              <div style={{ background: 'var(--ss-light-grey)', border: '1.5px solid #008080', borderRadius: '12px', padding: '18px', marginBottom: '18px', color: '#008080', fontSize: '13px', fontWeight: '700' }}>
                 Total amount will be deducted from your Aura Wallet balance.
                 <div style={{ marginTop: '8px', fontSize: '15px', color: 'var(--text-primary)' }}>
                   Current Balance: ₹{user?.wallet_balance || 0}
