@@ -1436,6 +1436,23 @@ app.post('/api/orders/:id/cancel', authenticateUser, asyncHandler(async (req, re
 
   await run('UPDATE payments SET status_track = ? WHERE id = ?', ['cancelled', order.id]);
 
+  // Refund the money via Razorpay if applicable
+  if (order.method !== 'cod' && typeof razorpayInstance !== 'undefined' && razorpayInstance) {
+    if (order.id && order.id.startsWith('pay_') && !order.id.startsWith('pay_mock_')) {
+      try {
+        await razorpayInstance.payments.refund(order.id, {
+          amount: Math.round(Number(order.amount) * 100),
+          notes: {
+            reason: 'Customer requested cancellation'
+          }
+        });
+        console.log(`Razorpay refund initiated for payment ${order.id}`);
+      } catch (err) {
+        console.error("Razorpay refund failed:", err);
+      }
+    }
+  }
+
   // Fetch user for email
   const user = await get('SELECT email, username FROM users WHERE id = ?', [userId]);
   if (user && user.email) {
