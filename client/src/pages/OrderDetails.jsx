@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/client';
-import { Package, Truck, CheckCircle, Home, ArrowLeft, Star, RotateCcw, XCircle } from 'lucide-react';
+import { Package, Truck, CheckCircle, Home, ArrowLeft, Star, RotateCcw, XCircle, Download } from 'lucide-react';
 import PageTitle from '../components/PageTitle';
 import { formatPrice, FALLBACK_IMAGE } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
