@@ -5,7 +5,14 @@ import PageTitle from '../components/PageTitle';
 import { useToast } from '../context/ToastContext';
 
 const Drops = () => {
-  const { showToast } = useToast();
+  let showToast = () => {};
+  try {
+    const toastCtx = useToast();
+    if (toastCtx && toastCtx.showToast) {
+      showToast = toastCtx.showToast;
+    }
+  } catch (e) {}
+
   const [notified, setNotified] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   
@@ -111,7 +118,7 @@ const Drops = () => {
           LIMITED DROPS
         </h1>
         <p style={{ color: '#aaa', fontSize: '18px', maxWidth: '650px', marginBottom: '40px', lineHeight: 1.6 }}>
-          Exclusive streetwear drops released in ultra-limited batches. No restocks ever. Once sold out, they're gone forever.
+          Exclusive streetwear drops released in ultra-limited batches. No restocks ever. Once sold out, {"they're"} gone forever.
         </p>
 
         {/* Featured Drop Card */}
@@ -256,7 +263,7 @@ const Drops = () => {
           </div>
 
           <h3 style={{ fontSize: '28px', fontWeight: '950', textTransform: 'uppercase', margin: '0 0 10px 0' }}>
-            CAN'T WAIT FOR THE DROP?
+            {"CAN'T WAIT FOR THE DROP?"}
           </h3>
           <p style={{ color: '#aaa', fontSize: '16px', maxWidth: '550px', marginBottom: '30px', lineHeight: 1.6 }}>
             Explore our currently active streetwear collection with instant dispatch and free express delivery across India.
