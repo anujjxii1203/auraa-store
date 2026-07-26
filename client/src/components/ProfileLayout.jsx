@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Package, Heart, LogOut, MapPin, Settings as SettingsIcon, MonitorSmartphone, Menu, ChevronDown, User as UserIcon, Sparkles } from 'lucide-react';
+import { Package, Heart, LogOut, MapPin, Settings as SettingsIcon, MonitorSmartphone, Menu, ChevronDown, User as UserIcon, Sparkles, Wallet } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import api from '../api/client';
 import BackButton from './BackButton';
@@ -30,6 +30,7 @@ const ProfileLayout = () => {
     if (path === '/wishlist') return 'WISHLIST';
     if (path === '/addresses') return 'ADDRESSES';
     if (path === '/settings') return 'SETTINGS';
+    if (path === '/wallet') return 'AURA WALLET';
     return 'MY ACCOUNT';
   };
 
@@ -72,6 +73,26 @@ const ProfileLayout = () => {
                 <span style={{ color: '#aaa', letterSpacing: '0.5px', fontSize: '10px' }}>AURA POINTS:</span>
                 <span style={{ color: '#ff4444', fontWeight: '950', fontSize: '13px' }}>{user?.points || 0}</span>
               </div>
+              <div
+                title="Aura Wallet Balance"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#212121',
+                  color: '#fff',
+                  padding: '6px 14px',
+                  borderRadius: '20px',
+                  fontSize: '11px',
+                  fontWeight: '900',
+                  marginLeft: '8px',
+                  flexShrink: 0
+                }}
+              >
+                <Wallet size={14} color="#00ff88" />
+                <span style={{ color: '#aaa', letterSpacing: '0.5px', fontSize: '10px' }}>WALLET:</span>
+                <span style={{ color: '#00ff88', fontWeight: '950', fontSize: '13px' }}>₹{user?.wallet_balance || 0}</span>
+              </div>
             </div>
 
             {/* Mobile Hamburger Toggle Bar */}
@@ -111,6 +132,11 @@ const ProfileLayout = () => {
             <Link to="/about" onClick={() => setIsNavOpen(false)} style={{ textDecoration: 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: path === '/about' ? 'var(--bg-primary)' : 'transparent', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: path === '/about' ? '#008080' : 'var(--text-primary)' }}>
                 <UserIcon size={18} /> ABOUT ACCOUNT
+              </div>
+            </Link>
+            <Link to="/wallet" onClick={() => setIsNavOpen(false)} style={{ textDecoration: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: path === '/wallet' ? 'var(--bg-primary)' : 'transparent', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', color: path === '/wallet' ? '#008080' : 'var(--text-primary)' }}>
+                <Wallet size={18} /> AURA WALLET
               </div>
             </Link>
             <Link to="/wishlist" onClick={() => setIsNavOpen(false)} style={{ textDecoration: 'none' }}>

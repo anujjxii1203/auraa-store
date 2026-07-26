@@ -16,6 +16,7 @@ import {
   Plus,
   ShieldCheck,
   Smartphone,
+  Wallet,
 } from 'lucide-react';
 import api from '../api/client';
 import { formatPrice } from '../utils/formatters';
@@ -25,6 +26,7 @@ import confetti from 'canvas-confetti';
 import { v4 as uuidv4 } from 'uuid';
 
 const paymentOptions = [
+  { id: 'wallet', label: 'Aura Wallet', detail: 'Pay instantly from your wallet', icon: Wallet },
   { id: 'upi', label: 'Online Payment', detail: 'Netbanking, Wallet, UPI', icon: Smartphone },
   { id: 'cod', label: 'Cash on Delivery', detail: 'Pay when your order arrives', icon: Banknote },
 ];
@@ -130,11 +132,11 @@ const Checkout = () => {
       return;
     }
 
-    if (paymentMethod === 'cod') {
+    if (paymentMethod === 'cod' || paymentMethod === 'wallet') {
       setIsPaying(true);
       try {
         const idempotencyKey = uuidv4();
-        const payload = { amount: finalTotal, method: 'cod', metadata: { items: cart, discount: discountAmount, pointsDiscount: pointsDiscount, couponCode: appliedCoupon || null, usePoints: usePoints === true } };
+        const payload = { amount: finalTotal, method: paymentMethod, metadata: { items: cart, discount: discountAmount, pointsDiscount: pointsDiscount, couponCode: appliedCoupon || null, usePoints: usePoints === true } };
         const response = await api.post('/payments', payload, {
           headers: {
             'Idempotency-Key': idempotencyKey
@@ -475,6 +477,15 @@ const Checkout = () => {
               </div>
             )}
 
+            {paymentMethod === 'wallet' && (
+              <div style={{ background: 'var(--ss-light-grey)', border: '1.5px solid #00ff88', borderRadius: '12px', padding: '18px', marginBottom: '18px', color: '#00cc66', fontSize: '13px', fontWeight: '700' }}>
+                Total amount will be deducted from your Aura Wallet balance.
+                <div style={{ marginTop: '8px', fontSize: '15px', color: 'var(--text-primary)' }}>
+                  Current Balance: ₹{user?.wallet_balance || 0}
+                </div>
+              </div>
+            )}
+
             {paymentError && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '9px', color: '#e11b23', background: '#fff1f1', border: '1px solid #ffcaca', borderRadius: '8px', padding: '12px 14px', marginBottom: '18px', fontSize: '13px', fontWeight: '800' }}>
                 <AlertCircle size={16} />
@@ -617,7 +628,7 @@ const Checkout = () => {
               style={{ width: '100%', padding: '18px', fontSize: '15px', borderRadius: '6px', opacity: addresses.length === 0 || isPaying ? 0.5 : 1, cursor: addresses.length === 0 || isPaying ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
               {isPaying && <LoaderCircle size={18} className="spin-icon" />}
-              {paymentMethod === 'cod' ? 'PLACE ORDER' : `PAY ${formatPrice(finalTotal)}`}
+              {paymentMethod === 'cod' || paymentMethod === 'wallet' ? 'PLACE ORDER' : `PAY ${formatPrice(finalTotal)}`}
             </button>
           </div>
         </div>

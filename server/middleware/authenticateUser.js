@@ -21,8 +21,7 @@ const authenticateUser = async (req, res, next) => {
     // 2. Verify token
     const decoded = jwt.verify(token, JWT_SECRET);
     
-    // 3. Ensure user still exists
-    const user = await get('SELECT id, username, email, points, role FROM users WHERE id = ?', [decoded.id]);
+    const user = await get('SELECT id, username, email, points, wallet_balance, role FROM users WHERE id = ?', [decoded.id]);
     
     if (!user) {
       return res.status(401).json({ message: 'User no longer exists. Please log in again.' });

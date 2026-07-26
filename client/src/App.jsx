@@ -14,6 +14,7 @@ import Checkout from './pages/Checkout';
 import Profile from './pages/Profile';
 import AboutUser from './pages/AboutUser';
 import Wishlist from './pages/Wishlist';
+import Wallet from './pages/Wallet';
 import Addresses from './pages/Addresses';
 import Settings from './pages/Settings';
 import Sessions from './pages/Sessions';
@@ -122,6 +123,7 @@ function App() {
                     <Route element={<ProfileLayout />}>
                       <Route path="/profile" element={<Profile />} />
                       <Route path="/about" element={<AboutUser />} />
+                      <Route path="/wallet" element={<Wallet />} />
                       <Route path="/wishlist" element={<Wishlist />} />
                       <Route path="/addresses" element={<Addresses />} />
                       <Route path="/devices" element={<Sessions />} />

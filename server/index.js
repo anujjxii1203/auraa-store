@@ -390,6 +390,7 @@ function publicUser(user) {
     username: user.username,
     email: user.email,
     points: user.points || 0,
+    wallet_balance: user.wallet_balance || 0,
   };
 }
 
@@ -559,8 +560,12 @@ async function resolveOrderTotal({ items, couponCode, usePoints, user }) {
   let pointsDiscount = 0;
   let pointsToDebit = 0;
   if (usePoints) {
-    const fresh = await get('SELECT points FROM users WHERE id = ?', [user.id]);
-    const availablePoints = Number(fresh?.points || 0);
+    const fresh = await get('SELECT points, wallet_balance FROM users WHERE id = ?', [user.id]);
+    if (fresh) {
+      user.points = fresh.points || 0;
+      user.wallet_balance = fresh.wallet_balance || 0;
+    }
+    const availablePoints = Number(user.points || 0);
     const maxDiscountFromPoints = Math.floor(availablePoints / POINTS_PER_RUPEE);
     pointsDiscount = Math.min(maxDiscountFromPoints, Math.floor(afterCoupon * 0.5));
     pointsDiscount = Math.max(0, pointsDiscount);
@@ -790,7 +795,7 @@ app.post('/api/auth/google', loginLimiter, asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Google account email is not verified.' });
   }
 
-  let user = await get('SELECT id, username, email, password FROM users WHERE email = ?', [email]);
+  let user = await get('SELECT id, username, email, password, points, wallet_balance FROM users WHERE email = ?', [email]);
 
   if (!user) {
     // Register the user
@@ -852,7 +857,7 @@ app.post('/api/auth/refresh', asyncHandler(async (req, res) => {
     return res.status(401).json({ message: 'Session expired or compromised. Please log in again.' });
   }
 
-  const user = await get('SELECT id, username, email, points, role FROM users WHERE id = ?', [storedToken.user_id]);
+  const user = await get('SELECT id, username, email, points, wallet_balance, role FROM users WHERE id = ?', [storedToken.user_id]);
   if (!user) {
     clearAuthCookies(res);
     return res.status(401).json({ message: 'User not found.' });
@@ -1035,7 +1040,7 @@ app.post('/api/auth/verify-otp', otpLimiter, asyncHandler(async (req, res, next)
     });
   }
 
-  const user = await get('SELECT id, username, email, points FROM users WHERE email = ?', [email]);
+  const user = await get('SELECT id, username, email, points, wallet_balance FROM users WHERE email = ?', [email]);
   if (!user) {
     res.status(404).json({ message: 'User not found.' });
     return;
@@ -1133,7 +1138,7 @@ app.get('/api/users', authenticateAdmin, requirePermission('manage_users'), asyn
 }));
 
 app.get('/api/admin/stats', authenticateAdmin, requirePermission('view_dashboard'), asyncHandler(async (req, res) => {
-  const users = await all('SELECT id, username, email, points, created_at FROM users ORDER BY created_at DESC');
+  const users = await all('SELECT id, username, email, points, wallet_balance, created_at FROM users ORDER BY created_at DESC');
   const products = await all('SELECT id, name, price, category, stock FROM products');
   const payments = await all('SELECT id, amount, status, method, reference, created_at, status_track FROM payments ORDER BY created_at DESC');
   const coupons = await all('SELECT * FROM coupons');
@@ -1436,8 +1441,13 @@ app.post('/api/orders/:id/cancel', authenticateUser, asyncHandler(async (req, re
 
   await run('UPDATE payments SET status_track = ? WHERE id = ?', ['cancelled', order.id]);
 
-  // Refund the money via Razorpay if applicable
-  if (order.method !== 'cod' && typeof razorpayInstance !== 'undefined' && razorpayInstance) {
+  // Refund the money via Razorpay or Wallet if applicable
+  if (order.method === 'wallet') {
+    await run('UPDATE users SET wallet_balance = COALESCE(wallet_balance, 0) + ? WHERE id = ?', [order.amount, userId]);
+    await run('INSERT INTO wallet_transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)', [
+      userId, order.amount, 'credit', `Refund for cancelled order ${order.reference || order.id}`
+    ]);
+  } else if (order.method !== 'cod' && typeof razorpayInstance !== 'undefined' && razorpayInstance) {
     if (order.id && order.id.startsWith('pay_') && !order.id.startsWith('pay_mock_')) {
       try {
         await razorpayInstance.payments.refund(order.id, {
@@ -1626,6 +1636,64 @@ const saveIdempotencyKey = async (key, userId, endpoint, body) => {
     console.error('Idempotency save non-fatal error:', err.message);
   }
 };
+
+// --- WALLET ROUTES ---
+app.get('/api/wallet', requireAuth, asyncHandler(async (req, res) => {
+  const user = await get('SELECT wallet_balance FROM users WHERE id = ?', [req.auth.id]);
+  const transactions = await all('SELECT * FROM wallet_transactions WHERE user_id = ? ORDER BY created_at DESC', [req.auth.id]);
+  res.json({ balance: user ? user.wallet_balance : 0, transactions });
+}));
+
+app.post('/api/wallet/add', requireAuth, asyncHandler(async (req, res) => {
+  const { amount } = req.body;
+  if (!amount || amount < 100) return res.status(400).json({ message: 'Minimum amount is ₹1' });
+  
+  if (!process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID.includes('YOUR_KEY_ID')) {
+    const mockOrder = {
+      id: `order_wallet_mock_${Date.now()}`,
+      amount: amount * 100,
+      currency: 'INR',
+      receipt: `wallet_${Date.now()}`,
+    };
+    return res.json(mockOrder);
+  }
+
+  const options = {
+    amount: amount * 100,
+    currency: 'INR',
+    receipt: `wallet_${Date.now()}`,
+  };
+
+  const order = await razorpayInstance.orders.create(options);
+  res.json(order);
+}));
+
+app.post('/api/wallet/verify', requireAuth, asyncHandler(async (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount } = req.body;
+  
+  const isMock = String(razorpay_order_id).startsWith('order_wallet_mock_');
+  if (!isMock) {
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ message: 'Missing payment details.' });
+    }
+    const generatedSignature = createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .digest('hex');
+    if (generatedSignature !== razorpay_signature) {
+      return res.status(400).json({ message: 'Invalid payment signature.' });
+    }
+  }
+
+  const userId = req.auth.id;
+  await run('UPDATE users SET wallet_balance = COALESCE(wallet_balance, 0) + ? WHERE id = ?', [amount, userId]);
+  
+  await run('INSERT INTO wallet_transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)', [
+    userId, amount, 'credit', `Added funds`
+  ]);
+  
+  const freshUser = await get('SELECT wallet_balance FROM users WHERE id = ?', [userId]);
+  res.json({ message: 'Wallet balance updated', balance: freshUser.wallet_balance });
+}));
 
 // --- RAZORPAY ROUTES ---
 app.post('/api/payments/razorpay-order', requireAuth, asyncHandler(async (req, res) => {
@@ -1871,7 +1939,98 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
     return;
   }
 
-  res.status(400).json({ message: 'Unsupported payment method. Use COD, UPI, or Card.' });
+  // Handle Wallet payments
+  if (method === 'wallet') {
+    const normalized = normalizePaymentPayload(req.body);
+    if (normalized.error) {
+      res.status(400).json({ message: normalized.error });
+      return;
+    }
+
+    const { amount, metadata } = normalized;
+
+    const resolved = await resolveOrderTotal({
+      items: metadata?.items,
+      couponCode: metadata?.couponCode,
+      usePoints: metadata?.usePoints === true,
+      user: req.auth,
+    });
+    if (resolved.error) {
+      res.status(400).json({ message: resolved.error });
+      return;
+    }
+    const { expectedTotal, pointsToDebit } = resolved;
+
+    if (Math.abs(expectedTotal - Number(amount)) > 1) {
+      res.status(400).json({ message: 'Order amount mismatch. Please refresh your cart and try again.' });
+      return;
+    }
+
+    // Verify wallet balance
+    const userRow = await get('SELECT wallet_balance FROM users WHERE id = ?', [req.auth.id]);
+    const currentBalance = userRow ? (userRow.wallet_balance || 0) : 0;
+
+    if (currentBalance < expectedTotal) {
+      res.status(400).json({ message: 'Insufficient Aura Wallet balance.' });
+      return;
+    }
+
+    // Deduct from wallet
+    await run('UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?', [expectedTotal, req.auth.id]);
+    await run('INSERT INTO wallet_transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)', [
+      req.auth.id, expectedTotal, 'debit', `Paid for order`
+    ]);
+
+    const paymentId = `pay_${randomUUID().replace(/-/g, '').slice(0, 18)}`;
+    const reference = `AURA-${Date.now()}-${Math.floor(Math.random() * 9000 + 1000)}`;
+    const status = 'paid';
+
+    await run(
+      `INSERT INTO payments (id, user_id, amount, method, status, reference, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [paymentId, req.auth.id, amount, method, status, reference, JSON.stringify(metadata || {})]
+    );
+
+    await run('INSERT INTO audit_logs (action, details, ip) VALUES (?, ?, ?)', [
+      'ORDER_PLACED', JSON.stringify({ user_id: req.auth.id, payment_id: paymentId, amount, method: 'wallet' }), req.ip || 'unknown'
+    ]);
+
+    if (pointsToDebit > 0) {
+      await run('UPDATE users SET points = CASE WHEN COALESCE(points, 0) - ? < 0 THEN 0 ELSE points - ? END WHERE id = ?', [pointsToDebit, pointsToDebit, req.auth.id]);
+      await run('UPDATE payments SET points_redeemed = ? WHERE id = ?', [pointsToDebit, paymentId]);
+    }
+
+    const pointsEarned = Math.floor(amount * 0.1);
+    await run('UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?', [pointsEarned, req.auth.id]);
+    await run('UPDATE payments SET points_awarded = 1 WHERE id = ?', [paymentId]);
+
+    if (metadata && metadata.items && Array.isArray(metadata.items)) {
+      for (const item of metadata.items) {
+        if (item.id && item.quantity) {
+          await run('UPDATE products SET stock = CASE WHEN stock - ? < 0 THEN 0 ELSE stock - ? END WHERE id = ?', [item.quantity, item.quantity, item.id]);
+        }
+      }
+    }
+
+    await sendOrderEmail(req.auth.email, reference, amount, metadata?.items || []);
+
+    const responsePayload = {
+      payment: {
+        id: paymentId,
+        amount,
+        method,
+        status,
+        reference,
+        metadata: metadata || {},
+      },
+    };
+
+    await saveIdempotencyKey(idempotencyKey, req.auth.id, '/api/payments', responsePayload);
+
+    res.status(201).json(responsePayload);
+    return;
+  }
+
+  res.status(400).json({ message: 'Unsupported payment method. Use Wallet, COD, UPI, or Card.' });
 }));
 
 // --- RETURNS ---

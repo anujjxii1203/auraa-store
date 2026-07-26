@@ -225,6 +225,7 @@ async function createUsersTable() {
       google_id TEXT UNIQUE,
       role TEXT DEFAULT 'user',
       points INTEGER DEFAULT 500,
+      wallet_balance INTEGER DEFAULT 0,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -233,10 +234,17 @@ async function createUsersTable() {
     if (dbType === 'postgres') {
       await run("ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user'");
       await run("ALTER TABLE users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 500");
+      await run("ALTER TABLE users ADD COLUMN IF NOT EXISTS wallet_balance INTEGER DEFAULT 0");
 
       await run("ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
     } else {
       await run("ALTER TABLE users ADD COLUMN points INTEGER DEFAULT 500");
+    }
+  } catch (err) {}
+
+  try {
+    if (dbType !== 'postgres') {
+      await run("ALTER TABLE users ADD COLUMN wallet_balance INTEGER DEFAULT 0");
     }
   } catch (err) {}
 
@@ -247,6 +255,20 @@ async function createUsersTable() {
   } catch (err) {}
 
   await run('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
+}
+
+async function createWalletTransactionsTable() {
+  const idCol = dbType === 'postgres' ? 'id SERIAL PRIMARY KEY' : 'id INTEGER PRIMARY KEY AUTOINCREMENT';
+  await run(`
+    CREATE TABLE IF NOT EXISTS wallet_transactions (
+      ${idCol},
+      user_id INTEGER NOT NULL,
+      amount INTEGER NOT NULL,
+      type TEXT NOT NULL CHECK (type IN ('credit', 'debit')),
+      description TEXT NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 }
 
 async function createProductsTable() {
@@ -727,6 +749,7 @@ async function initializeDatabase() {
         await createReturnsTable();
         await createAdminUsersTable();
         await createRolesTable();
+        await createWalletTransactionsTable();
         await client.query('COMMIT');
         console.log("PostgreSQL database initialized successfully.");
       } catch (err) {
@@ -761,6 +784,7 @@ async function initializeDatabase() {
       await createReturnsTable();
       await createAdminUsersTable();
       await createRolesTable();
+      await createWalletTransactionsTable();
       db.exec('COMMIT');
       console.log("Local SQLite database initialized successfully.");
     } catch (err) {
