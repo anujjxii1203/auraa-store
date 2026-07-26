@@ -45,8 +45,9 @@ const Drops = () => {
 
         <div style={{ position: 'relative', width: '100%', maxWidth: '800px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(225,27,35,0.2)' }}>
           <img 
-            src="https://images.unsplash.com/photo-1512353087810-258cb228ce9d?auto=format&fit=crop&w=1600&q=80" 
+            src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1600&q=80" 
             alt="Upcoming Drop" 
+            onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1600&q=80'; }}
             style={{ width: '100%', height: '500px', objectFit: 'cover', opacity: 0.8 }}
           />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 10%, transparent 60%)' }} />
