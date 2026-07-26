@@ -74,6 +74,7 @@ const AuraWallet = () => {
         currency: order.currency,
         name: 'AURA STORE WALLET',
         description: 'Add money to wallet',
+        image: 'https://ui-avatars.com/api/?name=Aura+Store&background=2b1be1&color=fff&size=256',
         order_id: order.id,
         handler: async (response) => {
           await verifyPayment({ ...response, amount });
