@@ -1439,7 +1439,13 @@ app.post('/api/orders/:id/cancel', authenticateUser, asyncHandler(async (req, re
   // Fetch user for email
   const user = await get('SELECT email, username FROM users WHERE id = ?', [userId]);
   if (user && user.email) {
-    await sendOrderCancelledEmail(user.email, user.username, order.reference || order.id, reason);
+    let displayReason = reason;
+    try {
+      const parsed = JSON.parse(reason);
+      displayReason = parsed.primaryReason || 'Not provided';
+      if (parsed.details) displayReason += ` - ${parsed.details}`;
+    } catch(e) {}
+    await sendOrderCancelledEmail(user.email, user.username, order.reference || order.id, displayReason);
   }
 
   // Refund any loyalty points tied to this order:

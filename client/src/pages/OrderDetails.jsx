@@ -27,6 +27,36 @@ const OrderDetails = () => {
   const [returnType, setReturnType] = useState("refund");
   const [returnPhoto, setReturnPhoto] = useState(null);
 
+  // States for Cancel Modal
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelDetails, setCancelDetails] = useState("");
+  const [cancelPhoto, setCancelPhoto] = useState(null);
+
+  const handleCancelSubmit = async () => {
+    if (!cancelReason) {
+      showToast("Please select a reason for cancelling", "error");
+      return;
+    }
+    try {
+      const payload = JSON.stringify({
+        primaryReason: cancelReason,
+        details: cancelDetails,
+        hasPhoto: !!cancelPhoto
+      });
+
+      await api.post(`/orders/${order.reference || order.id}/cancel`, { reason: payload });
+      showToast('Order cancelled successfully', 'success');
+      setOrder({ ...order, status: 'cancelled' });
+      setCancelModalOpen(false);
+      setCancelReason("");
+      setCancelDetails("");
+      setCancelPhoto(null);
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to cancel order', 'error');
+    }
+  };
+
   const handleReturnSubmit = async () => {
     if (!returnReason) {
       showToast("Please select a reason for returning", "error");
@@ -265,22 +295,7 @@ const OrderDetails = () => {
               </button>
               {order.status === 'processing' && (
                 <button
-                  onClick={async () => {
-                    const reason = window.prompt('Please enter a reason for cancelling this order:');
-                    if (reason !== null) {
-                      if (!reason.trim()) {
-                        showToast('Cancellation reason is required.', 'error');
-                        return;
-                      }
-                      try {
-                        await api.post(`/orders/${order.reference || order.id}/cancel`, { reason });
-                        showToast('Order cancelled successfully', 'success');
-                        setOrder({ ...order, status: 'cancelled' });
-                      } catch (err) {
-                        showToast(err.response?.data?.message || 'Failed to cancel order', 'error');
-                      }
-                    }
-                  }}
+                  onClick={() => setCancelModalOpen(true)}
                   style={{
                     padding: '6px 12px',
                     borderRadius: '6px',
@@ -595,6 +610,69 @@ const OrderDetails = () => {
                 style={{ padding: '10px 20px', background: 'var(--ss-red)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}
               >
                 Submit Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ background: 'var(--bg-primary)', padding: '30px', borderRadius: '12px', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ marginTop: 0, marginBottom: '5px', fontSize: '20px', fontWeight: '800' }}>Cancel Order</h2>
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', marginBottom: '20px' }} />
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Reason *</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {["Order by mistake", "Wrong product", "No need", "Used"].map((reason) => (
+                  <label key={reason} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                    <input
+                      type="radio"
+                      name="cancelReason"
+                      value={reason}
+                      checked={cancelReason === reason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                    />
+                    {reason}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Additional details (optional)</label>
+              <textarea
+                value={cancelDetails}
+                onChange={(e) => setCancelDetails(e.target.value)}
+                placeholder="Please explain in more detail..."
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid var(--border-color)', minHeight: '80px', resize: 'vertical', fontFamily: 'inherit' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Upload photo (optional)</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <label style={{ display: 'inline-block', padding: '8px 16px', border: '1.5px dashed var(--border-color)', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#666' }}>
+                  + Add photo
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => setCancelPhoto(e.target.files[0])} />
+                </label>
+                {cancelPhoto && <span style={{ fontSize: '12px', color: 'var(--teal)', fontWeight: '600' }}>{cancelPhoto.name}</span>}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
+              <button
+                onClick={() => setCancelModalOpen(false)}
+                style={{ padding: '10px 20px', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '700' }}
+              >
+                Go Back
+              </button>
+              <button
+                onClick={handleCancelSubmit}
+                style={{ padding: '10px 20px', background: 'var(--ss-red)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                Cancel Order
               </button>
             </div>
           </div>
