@@ -211,11 +211,11 @@ const AuraWallet = () => {
         {transactions.length === 0 ? (
           <p style={{ color: '#888', fontWeight: '600', textAlign: 'center', padding: '20px 0' }}>No transactions found.</p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div style={{ width: '100%', maxHeight: '500px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', paddingRight: '8px' }}>
             {transactions.map(tx => (
-              <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', background: 'var(--bg-secondary)', borderRadius: '10px' }}>
+              <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', background: 'var(--bg-secondary)', borderRadius: '10px', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: tx.type === 'credit' ? '#e6f2f2' : '#ffe6e6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: tx.type === 'credit' ? '#e6f2f2' : '#ffe6e6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {tx.type === 'credit' ? <TrendingUp size={20} color="#008080" /> : <TrendingDown size={20} color="#e11b23" />}
                   </div>
                   <div>
@@ -223,7 +223,7 @@ const AuraWallet = () => {
                     <p style={{ margin: 0, fontSize: '12px', color: '#888', fontWeight: '600' }}>{new Date(tx.created_at).toLocaleString()}</p>
                   </div>
                 </div>
-                <div style={{ fontSize: '16px', fontWeight: '900', color: tx.type === 'credit' ? '#008080' : 'var(--text-primary)' }}>
+                <div style={{ fontSize: '16px', fontWeight: '900', color: tx.type === 'credit' ? '#008080' : 'var(--text-primary)', flexShrink: 0 }}>
                   {tx.type === 'credit' ? '+' : '-'}₹{tx.amount.toLocaleString()}
                 </div>
               </div>
