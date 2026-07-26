@@ -122,37 +122,53 @@ const Drops = () => {
         </p>
 
         {/* Featured Drop Card */}
-        <div style={{ position: 'relative', width: '100%', maxWidth: '850px', borderRadius: '20px', overflow: 'hidden', border: '1.5px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px rgba(0, 0, 0, 0.9)' }}>
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          maxWidth: '850px',
+          minHeight: '560px',
+          borderRadius: '24px',
+          overflow: 'hidden',
+          border: '1.5px solid rgba(255,255,255,0.12)',
+          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.95)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '25px 20px 35px'
+        }}>
+          {/* Background Image & Gradient Overlay */}
           <img 
             src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1600&q=80" 
             alt="Upcoming Drop" 
             onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1600&q=80'; }}
-            style={{ width: '100%', height: '540px', objectFit: 'cover', filter: 'brightness(0.7)' }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.6)', zIndex: 1 }}
           />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,10,10,0.95) 15%, rgba(10,10,10,0.4) 60%, transparent)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,10,10,0.98) 20%, rgba(10,10,10,0.5) 70%, rgba(10,10,10,0.3) 100%)', zIndex: 2 }} />
           
-          <div style={{ position: 'absolute', top: '25px', left: '25px', display: 'flex', gap: '10px' }}>
-            <span style={{ background: '#ff4444', color: '#fff', fontSize: '12px', fontWeight: '950', padding: '6px 14px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+          {/* Card Header Tag */}
+          <div style={{ position: 'relative', zIndex: 3, display: 'flex', justifyContent: 'center' }}>
+            <span style={{ background: '#ff4444', color: '#fff', fontSize: '11px', fontWeight: '950', padding: '6px 16px', borderRadius: '30px', textTransform: 'uppercase', letterSpacing: '1.5px', boxShadow: '0 4px 15px rgba(255,68,68,0.4)' }}>
               NEXT DROP #001
             </span>
           </div>
 
-          <div style={{ position: 'absolute', bottom: '35px', left: 0, right: 0, padding: '0 30px', textAlign: 'center' }}>
-            <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: '950', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
+          {/* Card Main Details & Timer */}
+          <div style={{ position: 'relative', zIndex: 3, textAlign: 'center', marginTop: '40px' }}>
+            <h2 style={{ fontSize: 'clamp(22px, 5vw, 36px)', fontWeight: '950', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '-0.5px', color: '#ffffff' }}>
               "Midnight Operations" Cargo Set
             </h2>
-            <p style={{ fontSize: '15px', fontWeight: '800', color: '#ff4444', marginBottom: '25px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <Clock size={16} /> Dropping Friday at 8:00 PM IST • Only 40 Sets Produced
+            <p style={{ fontSize: '14px', fontWeight: '800', color: '#ff5555', marginBottom: '24px', display: 'inline-flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <Clock size={15} /> Dropping Friday at 8:00 PM IST • Only 40 Sets
             </p>
 
-            {/* Timer */}
-            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '30px' }}>
+            {/* Timer Row */}
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'nowrap', marginBottom: '28px', overflowX: 'auto', paddingBottom: '4px' }}>
               {Object.entries(timeLeft).map(([unit, value]) => (
-                <div key={unit} style={{ background: 'rgba(0, 0, 0, 0.65)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)', padding: '16px 22px', borderRadius: '14px', minWidth: '90px' }}>
-                  <div style={{ fontSize: '38px', fontWeight: '950', lineHeight: 1, fontFamily: 'monospace', color: '#fff' }}>
+                <div key={unit} style={{ background: 'rgba(0, 0, 0, 0.75)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(12px)', padding: '10px 14px', borderRadius: '12px', minWidth: '68px', flexShrink: 0 }}>
+                  <div style={{ fontSize: '24px', fontWeight: '950', lineHeight: 1, fontFamily: 'monospace', color: '#fff' }}>
                     {String(value).padStart(2, '0')}
                   </div>
-                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#999', textTransform: 'uppercase', marginTop: '6px', letterSpacing: '1px' }}>
+                  <div style={{ fontSize: '9px', fontWeight: '800', color: '#aaa', textTransform: 'uppercase', marginTop: '4px', letterSpacing: '0.5px' }}>
                     {unit}
                   </div>
                 </div>
@@ -163,28 +179,28 @@ const Drops = () => {
               onClick={handleNotifyMe}
               disabled={notified}
               style={{
-                background: notified ? '#222' : '#ffffff',
+                background: notified ? '#1a1a1a' : '#ffffff',
                 color: notified ? '#008080' : '#000000',
-                border: 'none',
-                padding: '16px 36px',
+                border: notified ? '1px solid #008080' : 'none',
+                padding: '14px 30px',
                 borderRadius: '40px',
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: '950',
                 cursor: notified ? 'default' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '10px',
+                gap: '8px',
                 transition: 'all 0.2s ease',
-                boxShadow: notified ? 'none' : '0 10px 30px rgba(255,255,255,0.3)'
+                boxShadow: notified ? 'none' : '0 10px 25px rgba(255,255,255,0.25)'
               }}
             >
               {notified ? (
                 <>
-                  <CheckCircle2 size={18} color="#008080" /> NOTIFICATION ACTIVE
+                  <CheckCircle2 size={17} color="#008080" /> NOTIFICATION ACTIVE
                 </>
               ) : (
                 <>
-                  <Bell size={18} /> GET VIP DROP ALERTS
+                  <Bell size={17} /> GET VIP DROP ALERTS
                 </>
               )}
             </button>
