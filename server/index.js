@@ -747,7 +747,7 @@ app.post('/api/login', loginLimiter, asyncHandler(async (req, res) => {
     return;
   }
 
-  const user = await get('SELECT id, username, email, password FROM users WHERE email = ?', [email]);
+  const user = await get('SELECT id, username, email, password FROM users WHERE email = ? AND deleted_at IS NULL', [email]);
 
   if (!user || !user.password) {
     res.status(401).json({ message: 'The email or password you entered is incorrect.' });
@@ -1210,8 +1210,8 @@ app.post('/api/admin/auth/login', loginLimiter, asyncHandler(async (req, res) =>
 
   res.cookie('adminToken', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: true,
+    sameSite: 'None',
     maxAge: 12 * 60 * 60 * 1000 // 12 hours
   });
 
@@ -1246,8 +1246,8 @@ app.post('/api/admin/auth/logout', authenticateAdmin, asyncHandler(async (req, r
   ]);
   res.clearCookie('adminToken', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    secure: true,
+    sameSite: 'None'
   });
   res.json({ message: 'Admin logged out successfully.' });
 }));
@@ -1645,8 +1645,9 @@ app.get('/api/wallet', requireAuth, asyncHandler(async (req, res) => {
 }));
 
 app.post('/api/wallet/add', requireAuth, asyncHandler(async (req, res) => {
-  const { amount } = req.body;
-  if (!amount || amount < 100) return res.status(400).json({ message: 'Minimum amount is ₹1' });
+  const amount = Math.round(Number(req.body.amount));
+  if (!amount || amount < 100) return res.status(400).json({ message: 'Minimum amount is ₹100' });
+  if (amount > 50000) return res.status(400).json({ message: 'Maximum top-up amount is ₹50,000' });
   
   if (!process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID.includes('YOUR_KEY_ID')) {
     const mockOrder = {
@@ -1654,6 +1655,7 @@ app.post('/api/wallet/add', requireAuth, asyncHandler(async (req, res) => {
       amount: amount * 100,
       currency: 'INR',
       receipt: `wallet_${Date.now()}`,
+      _expectedAmount: amount, // Server-side record of expected amount
     };
     return res.json(mockOrder);
   }
@@ -1662,6 +1664,7 @@ app.post('/api/wallet/add', requireAuth, asyncHandler(async (req, res) => {
     amount: amount * 100,
     currency: 'INR',
     receipt: `wallet_${Date.now()}`,
+    notes: { user_id: String(req.auth.id), type: 'wallet_topup' },
   };
 
   const order = await razorpayInstance.orders.create(options);
@@ -1671,6 +1674,11 @@ app.post('/api/wallet/add', requireAuth, asyncHandler(async (req, res) => {
 app.post('/api/wallet/verify', requireAuth, asyncHandler(async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount } = req.body;
   
+  const parsedAmount = Math.round(Number(amount));
+  if (!parsedAmount || parsedAmount <= 0 || parsedAmount > 50000) {
+    return res.status(400).json({ message: 'Invalid amount.' });
+  }
+
   const isMock = String(razorpay_order_id).startsWith('order_wallet_mock_');
   if (!isMock) {
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -1682,13 +1690,26 @@ app.post('/api/wallet/verify', requireAuth, asyncHandler(async (req, res) => {
     if (generatedSignature !== razorpay_signature) {
       return res.status(400).json({ message: 'Invalid payment signature.' });
     }
+
+    // CRITICAL: Verify actual paid amount from Razorpay order to prevent amount tampering
+    try {
+      const rzpOrder = await razorpayInstance.orders.fetch(razorpay_order_id);
+      const paidAmountInRupees = Math.round(rzpOrder.amount_paid / 100);
+      if (paidAmountInRupees !== parsedAmount) {
+        console.error(`Wallet amount mismatch! Claimed: ${parsedAmount}, Actual Razorpay: ${paidAmountInRupees}`);
+        return res.status(400).json({ message: 'Payment amount mismatch. Please try again.' });
+      }
+    } catch (fetchErr) {
+      console.error('Failed to verify Razorpay order amount:', fetchErr.message);
+      return res.status(500).json({ message: 'Could not verify payment. Please contact support.' });
+    }
   }
 
   const userId = req.auth.id;
-  await run('UPDATE users SET wallet_balance = COALESCE(wallet_balance, 0) + ? WHERE id = ?', [amount, userId]);
+  await run('UPDATE users SET wallet_balance = COALESCE(wallet_balance, 0) + ? WHERE id = ?', [parsedAmount, userId]);
   
   await run('INSERT INTO wallet_transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)', [
-    userId, amount, 'credit', `Added funds`
+    userId, parsedAmount, 'credit', `Added ₹${parsedAmount} via ${isMock ? 'test' : 'Razorpay'}`
   ]);
   
   const freshUser = await get('SELECT wallet_balance FROM users WHERE id = ?', [userId]);
@@ -2059,8 +2080,9 @@ app.post('/api/returns', authenticateUser, asyncHandler(async (req, res) => {
 
 app.patch('/api/admin/returns/:id/status', authenticateAdmin, requirePermission('manage_orders'), asyncHandler(async (req, res) => {
   const { status } = req.body;
-  if (!status) {
-    return res.status(400).json({ message: 'Status is required' });
+  const allowedReturnStatuses = ['pending', 'approved', 'rejected', 'completed'];
+  if (!status || !allowedReturnStatuses.includes(status)) {
+    return res.status(400).json({ message: `Status must be one of: ${allowedReturnStatuses.join(', ')}` });
   }
   await run('UPDATE returns SET status = ? WHERE id = ?', [status, req.params.id]);
   res.json({ message: 'Return status updated successfully' });
