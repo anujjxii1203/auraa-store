@@ -144,6 +144,7 @@ const Checkout = () => {
         });
         saveOrder(response.data.payment);
         setIsOrdered(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         triggerConfetti();
 
         try {
@@ -196,6 +197,7 @@ const Checkout = () => {
           });
           saveOrder(verifyResponse.data.payment);
           setIsOrdered(true);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
           triggerConfetti();
 
           try {
@@ -249,6 +251,7 @@ const Checkout = () => {
             });
             saveOrder(verifyResponse.data.payment);
             setIsOrdered(true);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             try {
               const meRes = await api.get('/me');
               updateUser(meRes.data.user);
