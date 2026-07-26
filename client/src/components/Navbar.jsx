@@ -114,7 +114,7 @@ const Navbar = () => {
           {/* Logo Section */}
           <div className="logo-left">
             <Link to="/" style={{ fontSize: '28px', fontWeight: '950', color: '#e11b23', letterSpacing: '-1.5px', textDecoration: 'none' }}>
-              AS
+              AURA STORE
             </Link>
           </div>
 
