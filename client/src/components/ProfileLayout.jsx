@@ -73,26 +73,7 @@ const ProfileLayout = () => {
                 <span style={{ color: '#aaa', letterSpacing: '0.5px', fontSize: '10px' }}>AURA POINTS:</span>
                 <span style={{ color: '#ff4444', fontWeight: '950', fontSize: '13px' }}>{user?.points || 0}</span>
               </div>
-              <div
-                title="Aura Wallet Balance"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: '#212121',
-                  color: '#fff',
-                  padding: '6px 14px',
-                  borderRadius: '20px',
-                  fontSize: '11px',
-                  fontWeight: '900',
-                  marginLeft: '8px',
-                  flexShrink: 0
-                }}
-              >
-                <Wallet size={14} color="#00ff88" />
-                <span style={{ color: '#aaa', letterSpacing: '0.5px', fontSize: '10px' }}>WALLET:</span>
-                <span style={{ color: '#00ff88', fontWeight: '950', fontSize: '13px' }}>₹{user?.wallet_balance || 0}</span>
-              </div>
+
             </div>
 
             {/* Mobile Hamburger Toggle Bar */}
