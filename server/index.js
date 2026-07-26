@@ -139,6 +139,31 @@ const sendPasswordResetEmail = async (toEmail) => {
   }
 };
 
+const sendOrderCancelledEmail = async (toEmail, username, orderReference, reason) => {
+  if (!process.env.GMAIL_USER || !process.env.BREVO_API_KEY) return;
+  try {
+    await transporter.sendMail({
+      from: `"Aura Store" <${process.env.GMAIL_USER || 'auraastore2@gmail.com'}>`,
+      to: toEmail,
+      subject: `Order Cancelled - #${orderReference}`,
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 600px; margin: auto;">
+          <h2 style="color: #e11b23; text-align: center;">AURA STORE</h2>
+          <h3 style="text-align: center;">Order Cancellation Confirmed</h3>
+          <p>Hello ${escapeHtml(username)},</p>
+          <p>Your order <strong>#${escapeHtml(orderReference)}</strong> has been successfully cancelled.</p>
+          <p><strong>Reason:</strong> ${escapeHtml(reason || 'Not provided')}</p>
+          <p>If you have already paid, a refund has been initiated and will reflect in your account soon.</p>
+          <br/>
+          <p>Best Regards,<br/><strong>The Aura Store Team</strong></p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error('Failed to send order cancellation email:', err);
+  }
+};
+
 // Escape user-supplied values before interpolating into email HTML.
 function escapeHtml(value) {
   return String(value == null ? '' : value)
@@ -1397,6 +1422,7 @@ app.post('/api/admin/settings', authenticateAdmin, requirePermission('manage_set
 app.post('/api/orders/:id/cancel', authenticateUser, asyncHandler(async (req, res) => {
   const orderId = req.params.id;
   const userId = req.auth.id;
+  const { reason } = req.body;
 
   const order = await get('SELECT * FROM payments WHERE (id = ? OR reference = ?) AND user_id = ?', [orderId, orderId, userId]);
   if (!order) {
@@ -1409,6 +1435,12 @@ app.post('/api/orders/:id/cancel', authenticateUser, asyncHandler(async (req, re
   }
 
   await run('UPDATE payments SET status_track = ? WHERE id = ?', ['cancelled', order.id]);
+
+  // Fetch user for email
+  const user = await get('SELECT email, username FROM users WHERE id = ?', [userId]);
+  if (user && user.email) {
+    await sendOrderCancelledEmail(user.email, user.username, order.reference || order.id, reason);
+  }
 
   // Refund any loyalty points tied to this order:
   //  - points_redeemed: give back what the user spent for the discount.

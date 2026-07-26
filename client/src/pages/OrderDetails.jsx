@@ -266,9 +266,14 @@ const OrderDetails = () => {
               {order.status === 'processing' && (
                 <button
                   onClick={async () => {
-                    if (window.confirm('Are you sure you want to cancel this order?')) {
+                    const reason = window.prompt('Please enter a reason for cancelling this order:');
+                    if (reason !== null) {
+                      if (!reason.trim()) {
+                        showToast('Cancellation reason is required.', 'error');
+                        return;
+                      }
                       try {
-                        await api.post(`/orders/${order.reference || order.id}/cancel`);
+                        await api.post(`/orders/${order.reference || order.id}/cancel`, { reason });
                         showToast('Order cancelled successfully', 'success');
                         setOrder({ ...order, status: 'cancelled' });
                       } catch (err) {
