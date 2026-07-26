@@ -4,7 +4,8 @@ const { run } = require('../database');
 const UAParser = require('ua-parser-js');
 const geoip = require('geoip-lite');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'development_secret_change_me';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) { throw new Error('JWT_SECRET not set'); }
 const ACCESS_TOKEN_EXPIRY = '15m';
 
 const generateTokens = async (user, req, rememberMe = false, existingFamilyId = null) => {

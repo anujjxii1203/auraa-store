@@ -216,9 +216,16 @@ const Checkout = () => {
         return;
       }
 
+      const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+      if (!rzpKey) {
+        setPaymentError('Payment gateway configuration error. Please contact support.');
+        setIsPaying(false);
+        return;
+      }
+
       // 2. Open Razorpay Checkout Modal
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RJJYQC25Xs2ySM',
+        key: rzpKey,
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'AURA STORE',

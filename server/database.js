@@ -12,7 +12,9 @@ if (pgUrl && pgUrl.trim() && !pgUrl.includes('placeholder')) {
     const connectionString = pgUrl.split('?')[0];
     pool = new Pool({
       connectionString: connectionString,
-      ssl: { rejectUnauthorized: false },
+      // Supabase transaction pooler (port 6543) uses custom cert chain in some regions.
+      // rejectUnauthorized: true enforces full SSL certificate validation.
+      ssl: { rejectUnauthorized: true },
       connectionTimeoutMillis: 5000,
     });
     dbType = 'postgres';

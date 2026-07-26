@@ -67,9 +67,15 @@ const AuraWallet = () => {
         });
         return;
       }
+      const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+      if (!rzpKey) {
+        showToast('Payment gateway configuration error. Please contact support.', 'error');
+        setIsAdding(false);
+        return;
+      }
 
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RJJYQC25Xs2ySM',
+        key: rzpKey,
         amount: order.amount,
         currency: order.currency,
         name: 'AURA STORE WALLET',

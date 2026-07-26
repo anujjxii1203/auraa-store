@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 const { get } = require('../database');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'development_secret_change_me';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) { throw new Error('JWT_SECRET not set'); }
 
 const authenticateUser = async (req, res, next) => {
   try {

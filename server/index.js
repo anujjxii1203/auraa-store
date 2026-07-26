@@ -22,7 +22,7 @@ const errorHandler = require('./middleware/errorHandler');
 const { generateTokens, setAuthCookies, clearAuthCookies } = require('./utils/tokenHelper');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { randomUUID, createHmac } = require('crypto');
+const { randomUUID, createHmac, timingSafeEqual } = require('crypto');
 const { sendReturnEmail } = require('./utils/emailHelper');
 const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID);
@@ -1687,7 +1687,9 @@ app.post('/api/wallet/verify', requireAuth, asyncHandler(async (req, res) => {
     const generatedSignature = createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
       .update(razorpay_order_id + "|" + razorpay_payment_id)
       .digest('hex');
-    if (generatedSignature !== razorpay_signature) {
+    const sigBuf = Buffer.from(generatedSignature, 'utf8');
+    const expectedBuf = Buffer.from(String(razorpay_signature || ''), 'utf8');
+    if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) {
       return res.status(400).json({ message: 'Invalid payment signature.' });
     }
 
@@ -1789,7 +1791,9 @@ app.post('/api/payments', requireAuth, asyncHandler(async (req, res) => {
         .update(razorpay_order_id + "|" + razorpay_payment_id)
         .digest('hex');
 
-      if (generatedSignature !== razorpay_signature) {
+      const sigBuf = Buffer.from(generatedSignature, 'utf8');
+      const expectedBuf = Buffer.from(String(razorpay_signature || ''), 'utf8');
+      if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) {
         res.status(400).json({ message: 'Payment verification failed. Invalid signature.' });
         return;
       }
