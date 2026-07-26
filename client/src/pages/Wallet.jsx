@@ -69,7 +69,7 @@ const AuraWallet = () => {
       }
 
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RJJYQC25Xs2ySM',
         amount: order.amount,
         currency: order.currency,
         name: 'AURA STORE WALLET',
@@ -119,7 +119,7 @@ const AuraWallet = () => {
   if (isLoading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: '50px 0' }}>
-        <LoaderCircle size={40} className="spinner" color="var(--teal)" />
+        <LoaderCircle size={40} color="#00ff88" style={{ animation: 'spin 1s linear infinite' }} />
       </div>
     );
   }
@@ -189,7 +189,7 @@ const AuraWallet = () => {
               opacity: isAdding ? 0.7 : 1
             }}
           >
-            {isAdding ? <LoaderCircle size={18} className="spinner" /> : <><Plus size={18} /> ADD MONEY</>}
+            {isAdding ? <LoaderCircle size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <><Plus size={18} /> ADD MONEY</>}
           </button>
         </form>
       </div>
