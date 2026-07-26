@@ -439,8 +439,8 @@ function normalizePaymentPayload(body) {
   const method = String(body.method || '').trim().toLowerCase();
   const amount = parseAmount(body.amount);
 
-  if (!['card', 'upi', 'cod'].includes(method)) {
-    return { error: 'Choose Card, UPI, or Cash on Delivery before placing the order.' };
+  if (!['card', 'upi', 'cod', 'wallet'].includes(method)) {
+    return { error: 'Choose Card, UPI, Wallet, or Cash on Delivery before placing the order.' };
   }
 
   if (!amount || amount <= 0) {
