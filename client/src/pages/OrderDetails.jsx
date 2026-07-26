@@ -6,10 +6,13 @@ import PageTitle from '../components/PageTitle';
 import { formatPrice, FALLBACK_IMAGE } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
 
+import { useUser } from '../context/UserContext';
+
 const OrderDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { updateUser } = useUser();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,6 +34,7 @@ const OrderDetails = () => {
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelDetails, setCancelDetails] = useState("");
+  const [refundDestination, setRefundDestination] = useState("wallet");
   const [cancelPhoto, setCancelPhoto] = useState(null);
 
   const handleCancelSubmit = async () => {
@@ -45,13 +49,19 @@ const OrderDetails = () => {
         hasPhoto: !!cancelPhoto
       });
 
-      await api.post(`/orders/${order.reference || order.id}/cancel`, { reason: payload });
-      showToast('Order cancelled successfully', 'success');
+      const res = await api.post(`/orders/${order.reference || order.id}/cancel`, { reason: payload, refundDestination });
+      showToast(res.data?.message || 'Order cancelled successfully', 'success');
       setOrder({ ...order, status: 'cancelled' });
       setCancelModalOpen(false);
       setCancelReason("");
       setCancelDetails("");
       setCancelPhoto(null);
+
+      // Refresh user to get updated wallet balance if refunded to wallet
+      try {
+        const meRes = await api.get('/me');
+        updateUser(meRes.data.user);
+      } catch (e) {}
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to cancel order', 'error');
     }
@@ -658,6 +668,38 @@ const OrderDetails = () => {
                   <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => setCancelPhoto(e.target.files[0])} />
                 </label>
                 {cancelPhoto && <span style={{ fontSize: '12px', color: 'var(--teal)', fontWeight: '600' }}>{cancelPhoto.name}</span>}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '700' }}>Refund Destination *</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', background: 'var(--ss-light-grey)', padding: '10px 14px', borderRadius: '8px', border: refundDestination === 'wallet' ? '1.5px solid #008080' : '1.5px solid var(--border-color)' }}>
+                  <input
+                    type="radio"
+                    name="refundDestination"
+                    value="wallet"
+                    checked={refundDestination === 'wallet'}
+                    onChange={(e) => setRefundDestination(e.target.value)}
+                  />
+                  <span>
+                    <strong>Aura Wallet (Instant)</strong>
+                    <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>Money will be credited to your Aura Wallet balance immediately.</div>
+                  </span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', background: 'var(--ss-light-grey)', padding: '10px 14px', borderRadius: '8px', border: refundDestination === 'original' ? '1.5px solid #008080' : '1.5px solid var(--border-color)' }}>
+                  <input
+                    type="radio"
+                    name="refundDestination"
+                    value="original"
+                    checked={refundDestination === 'original'}
+                    onChange={(e) => setRefundDestination(e.target.value)}
+                  />
+                  <span>
+                    <strong>Original Payment Method / Bank</strong>
+                    <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>Refund will be processed back to your bank / UPI / Card in 3-5 business days.</div>
+                  </span>
+                </label>
               </div>
             </div>
 

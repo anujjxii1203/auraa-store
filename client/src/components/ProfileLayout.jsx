@@ -42,17 +42,17 @@ const ProfileLayout = () => {
         {/* Sidebar */}
         <div className="profile-sidebar" style={{ background: 'var(--ss-light-grey)', padding: '20px', borderRadius: '12px', height: 'fit-content' }}>
           <div className="profile-sidebar-header">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '12px', textAlign: 'left' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                 <div className="avatar" style={{ width: '50px', height: '50px', background: '#008080', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: '900', flexShrink: 0 }}>
                   {(user?.username || 'A').charAt(0).toUpperCase()}
                 </div>
-                <h2 style={{ fontSize: '18px', fontWeight: '950', color: 'var(--text-primary)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: '950', color: 'var(--text-primary)', margin: 0, wordBreak: 'break-word' }}>
                   {(user?.username || 'Customer').toUpperCase()}
                 </h2>
               </div>
 
-              {/* Far-Right Aura Points Icon Pill */}
+              {/* Aura Points Icon Pill */}
               <div
                 title="Aura Points Balance"
                 style={{
@@ -65,8 +65,7 @@ const ProfileLayout = () => {
                   borderRadius: '20px',
                   fontSize: '11px',
                   fontWeight: '900',
-                  marginLeft: 'auto',
-                  flexShrink: 0
+                  width: 'fit-content'
                 }}
               >
                 <Sparkles size={14} color="#ffd700" fill="#ffd700" />

@@ -1427,7 +1427,8 @@ app.post('/api/admin/settings', authenticateAdmin, requirePermission('manage_set
 app.post('/api/orders/:id/cancel', authenticateUser, asyncHandler(async (req, res) => {
   const orderId = req.params.id;
   const userId = req.auth.id;
-  const { reason } = req.body;
+  const { reason, refundDestination } = req.body;
+  const isWalletRefund = refundDestination === 'wallet' || order.method === 'wallet';
 
   const order = await get('SELECT * FROM payments WHERE (id = ? OR reference = ?) AND user_id = ?', [orderId, orderId, userId]);
   if (!order) {
@@ -1441,19 +1442,22 @@ app.post('/api/orders/:id/cancel', authenticateUser, asyncHandler(async (req, re
 
   await run('UPDATE payments SET status_track = ? WHERE id = ?', ['cancelled', order.id]);
 
-  // Refund the money via Razorpay or Wallet if applicable
-  if (order.method === 'wallet') {
+  let responseMessage = 'Order cancelled successfully.';
+
+  // Refund the money via Wallet or Bank/Razorpay if applicable
+  if (isWalletRefund) {
     await run('UPDATE users SET wallet_balance = COALESCE(wallet_balance, 0) + ? WHERE id = ?', [order.amount, userId]);
     await run('INSERT INTO wallet_transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)', [
       userId, order.amount, 'credit', `Refund for cancelled order ${order.reference || order.id}`
     ]);
+    responseMessage = `Order cancelled! ₹${order.amount} has been credited to your Aura Wallet.`;
   } else if (order.method !== 'cod' && typeof razorpayInstance !== 'undefined' && razorpayInstance) {
     if (order.id && order.id.startsWith('pay_') && !order.id.startsWith('pay_mock_')) {
       try {
         await razorpayInstance.payments.refund(order.id, {
           amount: Math.round(Number(order.amount) * 100),
           notes: {
-            reason: 'Customer requested cancellation'
+            reason: 'Customer requested cancellation to bank'
           }
         });
         console.log(`Razorpay refund initiated for payment ${order.id}`);
@@ -1461,6 +1465,7 @@ app.post('/api/orders/:id/cancel', authenticateUser, asyncHandler(async (req, re
         console.error("Razorpay refund failed:", err);
       }
     }
+    responseMessage = 'Order cancelled! Refund will be processed to your original bank account in 3-5 business days.';
   }
 
   // Fetch user for email
@@ -1495,11 +1500,11 @@ app.post('/api/orders/:id/cancel', authenticateUser, asyncHandler(async (req, re
 
   await run('INSERT INTO audit_logs (action, details, ip) VALUES (?, ?, ?)', [
     'ORDER_CANCELLED',
-    JSON.stringify({ user_id: userId, payment_id: order.id, points_refunded: pointsRedeemed, points_clawed_back: pointsEarned }),
+    JSON.stringify({ user_id: userId, payment_id: order.id, refund_destination: isWalletRefund ? 'wallet' : 'bank', points_refunded: pointsRedeemed, points_clawed_back: pointsEarned }),
     req.ip || 'unknown'
   ]);
 
-  res.json({ message: 'Order cancelled successfully.' });
+  res.json({ message: responseMessage });
 }));
 
 // --- ADMIN REVIEW ROUTES ---
