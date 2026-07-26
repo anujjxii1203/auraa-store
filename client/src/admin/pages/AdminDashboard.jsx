@@ -53,7 +53,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="dashboard-container">
-      <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="dashboard-header">
         <div>
           <h1>Dashboard Overview</h1>
           <p>Welcome back, {admin?.role}</p>

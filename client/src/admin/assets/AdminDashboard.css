@@ -4,6 +4,12 @@
   gap: 24px;
 }
 
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .dashboard-header h1 {
   font-size: 24px;
   font-weight: 700;
@@ -139,5 +145,21 @@
 @media (max-width: 1024px) {
   .dashboard-main-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-section, .timeline-section {
+    padding: 16px;
   }
 }
